@@ -6,6 +6,8 @@
 
 2026-10-06 新增：面向有 JS/Java 经验开发者的中文 Python 课程与本地学习网站，见 [Python 课程与学习网站](#python-课程与学习网站2026-10-06-新增)。
 
+作者：[lixudong1649](https://github.com/lixudong1649) · 反馈：[GitHub Issues](https://github.com/lixudong1649/jdp-python/issues) · 许可：代码 MIT，课程内容 CC BY-NC-SA 4.0（见 [许可与声明](#许可与声明)）
+
 ## 维护边界
 
 - 每项实验记录目的、依赖、运行方式、结果与限制。
@@ -16,6 +18,9 @@
 
 ```text
 README.md                      项目说明（本文件）
+LICENSE / LICENSE-CONTENT.md   许可：代码 MIT / 课程内容 CC BY-NC-SA 4.0
+CONTRIBUTING.md / CHANGELOG.md 反馈与贡献指南 / 更新记录
+.github/workflows/             CI（校验与构建）、GitHub Pages 部署
 pyproject.toml / uv.lock       依赖声明与锁定（uv 管理）
 .python-version                固定 Python 版本（3.12）
 .env.example                   环境变量模板（复制为 .env 后填写；.env 不提交）
@@ -26,6 +31,8 @@ docs/
   课程/                        课程正文：NN-阶段/NN-课.md，每阶段含 index.md 导读；附录/ 含速查表、术语表
   Python概览与环境.md          Python 特点、版本现状、环境概念与 uv 用法
   代码解读/minimal_agent.md    minimal_agent.py 逐段语法解读
+  项目架构与技术栈.md          目录职责、运行机制、技术栈版本与命令
+  关于.md                      作者与联系、许可、声明、第三方组件
 examples/
   agent/                       最小 Agent 循环示例（工具调用）
 site/                          VitePress 学习网站（渲染 docs/；依赖只装在 site/node_modules）
@@ -56,6 +63,11 @@ uv run examples/agent/minimal_agent.py    # 运行最小 Agent 示例
 - [Python 概览与环境](docs/Python概览与环境.md)：Python 是什么、版本现状、uv 环境
 - [读懂 minimal_agent.py](docs/代码解读/minimal_agent.md)：示例代码逐段解读（课程中的逐行精读见 [11.1](docs/课程/11-简单项目/01-minimal_agent逐行精读.md)）
 - [examples/agent](examples/agent/README.md)：最小 Agent 循环的原理、运行与验证结果
+
+项目：
+
+- [项目架构与技术栈](docs/项目架构与技术栈.md)：目录职责、构建与运行机制、技术栈版本、命令与设计决策
+- [关于与声明](docs/关于.md)、[反馈与贡献](CONTRIBUTING.md)、[更新记录](CHANGELOG.md)
 
 ## 实验记录
 
@@ -95,3 +107,19 @@ cd site && npm run smoke                     # 浏览器冒烟测试（需本机
 ### 课程文档索引
 
 课程相关文档已并入上方 [文档索引](#文档索引)（学习部分）。
+
+## 部署
+
+- CI：`.github/workflows/ci.yml` 在推送与 PR 时运行课程校验、Pyodide 校验、站点构建与冒烟测试。
+- GitHub Pages：`.github/workflows/pages.yml` 以 `SITE_BASE=/jdp-python/` 构建并发布，目标地址 `https://lixudong1649.github.io/jdp-python/`。需在仓库设置中启用 Pages（Source：GitHub Actions）；私有仓库需付费套餐，且发布后的站点默认公开可访问。
+
+## 许可与声明
+
+© 2026 [lixudong1649](https://github.com/lixudong1649)
+
+| 范围 | 许可 |
+|---|---|
+| 代码：`examples/`、`site/`、`tests/`，以及 `docs/` 中的代码示例与练习 | [MIT](LICENSE) |
+| 课程文字、表格与图示：`docs/` | [CC BY-NC-SA 4.0](LICENSE-CONTENT.md) |
+
+本项目仅用于学习，与 Python Software Foundation、Anthropic、DeepSeek 无隶属关系；相关商标归各自所有者所有。第三方组件（Pyodide 等）遵循各自许可。内容可能有误，欢迎通过 [Issues](https://github.com/lixudong1649/jdp-python/issues) 反馈。完整声明见 [关于](docs/关于.md)。

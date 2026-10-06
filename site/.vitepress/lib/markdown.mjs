@@ -6,9 +6,9 @@ const escAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').
 /**
  * markdown-it 插件：
  * 1. 把 `python run` / `python exercise` 代码块渲染为交互组件（静态高亮作为无 JS 时的回退内容）；
- * 2. 把指向 docs/ 之外的相对链接（如 ../examples/agent/minimal_agent.py）改写为 /repo/<路径>.txt 纯文本副本。
+ * 2. 把指向 docs/ 之外的相对链接（如 ../examples/agent/minimal_agent.py）改写为 <base>repo/<路径>.txt 纯文本副本。
  */
-export function coursePlugin(md, { srcDir, projectRoot }) {
+export function coursePlugin(md, { srcDir, projectRoot, base = '/' }) {
   const fence = md.renderer.rules.fence
   md.renderer.rules.fence = (tokens, idx, options, env, self) => {
     const t = tokens[idx]
@@ -41,7 +41,7 @@ export function coursePlugin(md, { srcDir, projectRoot }) {
         const abs = path.resolve(path.dirname(file), decodeURI(p))
         if (abs.startsWith(srcDir + path.sep)) continue
         const rel = path.relative(projectRoot, abs).split(path.sep).join('/')
-        tok.attrSet('href', `/repo/${encodeURI(rel)}.txt${hash ? '#' + hash : ''}`)
+        tok.attrSet('href', `${base}repo/${encodeURI(rel)}.txt${hash ? '#' + hash : ''}`)
         tok.attrSet('target', '_blank')
       }
     }

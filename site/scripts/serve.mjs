@@ -1,6 +1,7 @@
 // 零依赖静态服务器：托管构建产物 .vitepress/dist，默认只监听本机 127.0.0.1:5180。
 // （vitepress preview 会忽略 --host、监听所有网卡，故用此脚本替代。）
-// 用法：node scripts/serve.mjs [--port 5180] [--host 127.0.0.1]
+// 用法：node scripts/serve.mjs [--port 5180] [--host 127.0.0.1] [--root .vitepress/dist] [--base /]
+// --base 用于本机验证 Pages 构建（如 --root .vitepress/dist-pages --base /jdp-python/）。
 import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -13,7 +14,9 @@ const opt = (name, def) => {
 }
 const host = opt('host', process.env.HOST || '127.0.0.1')
 const port = Number(opt('port', process.env.PORT || 5180))
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.vitepress/dist')
+const siteDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const root = path.resolve(siteDir, opt('root', '.vitepress/dist'))
+const base = ('/' + opt('base', '/').replace(/^\/+|\/+$/g, '') + '/').replace(/^\/\/$/, '/')
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -41,7 +44,12 @@ if (!fs.existsSync(path.join(root, 'index.html'))) {
 
 http.createServer((req, res) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return }
-  let file = resolveFile(req.url || '/')
+  let url = req.url || '/'
+  if (base !== '/') {
+    if (url === base.slice(0, -1)) { res.writeHead(301, { Location: base }).end(); return }
+    url = url.startsWith(base) ? url.slice(base.length - 1) : null
+  }
+  let file = url === null ? null : resolveFile(url)
   let status = 200
   if (!file) { file = path.join(root, '404.html'); status = 404 }
   const ext = path.extname(file)
@@ -54,5 +62,5 @@ http.createServer((req, res) => {
   if (req.method === 'HEAD') { res.end(); return }
   fs.createReadStream(file).pipe(res)
 }).listen(port, host, () => {
-  console.log(`课程站点：http://${host}:${port}/  （目录 ${path.relative(process.cwd(), root) || '.'}）`)
+  console.log(`课程站点：http://${host}:${port}${base}  （目录 ${path.relative(process.cwd(), root) || '.'}）`)
 })

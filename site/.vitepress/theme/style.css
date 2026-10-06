@@ -97,3 +97,15 @@
 .roadmap-lessons li.done::marker { content: '✓  '; color: var(--vp-c-green-1); }
 .roadmap-lessons a { color: var(--vp-c-text-1) !important; text-decoration: none !important; }
 .roadmap-lessons a:hover { color: var(--vp-c-brand-1) !important; }
+
+/* 文档页底部版权行 */
+.site-copyright {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--vp-c-divider);
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--vp-c-text-3);
+}
+.site-copyright a { color: var(--vp-c-text-2); text-decoration: underline; text-underline-offset: 2px; }
+.site-copyright a:hover { color: var(--vp-c-brand-1); }

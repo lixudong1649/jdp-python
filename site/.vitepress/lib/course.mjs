@@ -59,6 +59,10 @@ export function buildSidebar(stages, srcDir) {
     { text: '术语表', link: '/课程/附录/术语表' },
     { text: 'minimal_agent.py 语法速查', link: '/代码解读/minimal_agent' },
   ].filter((i) => exists(i.link.slice(1) + '.md'))
+  const project = [
+    { text: '项目架构与技术栈', link: '/项目架构与技术栈' },
+    { text: '关于与声明', link: '/关于' },
+  ].filter((i) => exists(i.link.slice(1) + '.md'))
   return [
     { text: '开始', items: guide },
     ...stages.map((s) => ({
@@ -67,5 +71,6 @@ export function buildSidebar(stages, srcDir) {
       items: [{ text: '阶段导读', link: s.link }, ...s.lessons.map((l) => ({ text: l.title, link: l.link }))],
     })),
     { text: '附录', items: appendix },
+    ...(project.length ? [{ text: '项目', items: project }] : []),
   ]
 }

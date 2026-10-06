@@ -27,6 +27,7 @@ dist/
 # 课程站点（site/）：依赖、构建产物与构建时复制的资源
 site/node_modules/
 site/.vitepress/dist/
+site/.vitepress/dist-pages/
 site/.vitepress/cache/
 site/.vitepress/preview.pid
 site/public/pyodide/

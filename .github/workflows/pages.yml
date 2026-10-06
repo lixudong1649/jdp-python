@@ -1,0 +1,59 @@
+# 构建并部署 GitHub Pages（项目页 https://lixudong1649.github.io/jdp-python/）。
+# 启用步骤：仓库 Settings → Pages → Source 选 “GitHub Actions”，再设置仓库变量
+#   gh variable set PAGES_ENABLED --body true
+# 未设置该变量时，推送触发的运行会跳过（不报错）；手动触发（workflow_dispatch）始终执行。
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ vars.PAGES_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: 安装站点依赖
+        working-directory: site
+        run: npm ci
+
+      - uses: actions/configure-pages@v6
+
+      - name: 构建（base=/jdp-python/，含本地 Pyodide 约 15 MB）
+        working-directory: site
+        env:
+          SITE_BASE: /jdp-python/
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -32,9 +32,13 @@ export function initProgress() {
 }
 
 /** 统一路径格式：解码、去掉 .html 与末尾 index。 */
+// 站点部署路径（本机 '/'，Pages 为 '/jdp-python/'）；进度键统一使用不含 base 的路径。
+const BASE = decodeURI(import.meta.env.BASE_URL || '/')
+
 export function normPath(p: string): string {
   let s = p.split('#')[0].split('?')[0]
   try { s = decodeURI(s) } catch {}
+  if (BASE !== '/' && s.startsWith(BASE)) s = s.slice(BASE.length - 1)
   s = s.replace(/\.html$/, '').replace(/\/index$/, '/')
   return s
 }
