@@ -1,0 +1,9 @@
+[project]
+name = "jdp-python"
+version = "0.1.0"
+description = "Python 学习与实验仓（示例、学习文档）"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=1.11.0",
+    "python-dotenv>=1.2.4",
+]

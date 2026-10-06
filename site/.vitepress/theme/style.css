@@ -1,0 +1,99 @@
+:root {
+  --vp-c-brand-1: #3776ab;
+  --vp-c-brand-2: #2f6797;
+  --vp-c-brand-3: #285a85;
+  --vp-c-brand-soft: rgba(55, 118, 171, 0.14);
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #3776ab 30%, #ffd43b);
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, #3776ab 50%, #ffd43b 50%);
+  --vp-home-hero-image-filter: blur(56px);
+}
+.dark {
+  --vp-c-brand-1: #6aa7dc;
+  --vp-c-brand-2: #5795cc;
+  --vp-c-brand-3: #4a86bb;
+}
+
+/* ---------- 可运行代码块 & 练习 ---------- */
+.py-runner, .py-exercise {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  margin: 16px 0;
+  overflow: hidden;
+  background: var(--vp-code-block-bg);
+}
+.py-exercise { border-color: var(--vp-c-brand-soft); box-shadow: 0 0 0 1px var(--vp-c-brand-soft); }
+.py-exercise[data-passed='1'] { border-color: var(--vp-c-green-2); }
+.py-toolbar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 10px; border-bottom: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft); font-size: 13px;
+}
+.py-spacer { flex: 1; }
+.py-badge { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--vp-c-brand-soft); color: var(--vp-c-brand-1); font-weight: 600; }
+.py-badge-warn { background: var(--vp-c-warning-soft); color: var(--vp-c-warning-1); }
+.py-badge-ok { background: var(--vp-c-green-soft); color: var(--vp-c-green-1); }
+.py-badge-ex { background: var(--vp-c-purple-soft); color: var(--vp-c-purple-1); }
+.py-status, .py-hint { color: var(--vp-c-text-3); font-size: 12px; }
+.py-btn {
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+  border: 1px solid var(--vp-c-divider); border-radius: 6px; padding: 3px 12px;
+  font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); background: var(--vp-c-bg);
+  text-decoration: none !important; transition: border-color .2s, background .2s;
+}
+.py-btn:hover:not(:disabled) { border-color: var(--vp-c-brand-1); }
+.py-btn:disabled { opacity: .5; cursor: not-allowed; }
+.py-btn-primary { background: var(--vp-c-brand-1); border-color: var(--vp-c-brand-1); color: #fff !important; }
+.py-btn-primary:hover:not(:disabled) { background: var(--vp-c-brand-2); }
+.py-link { background: none; border: none; color: var(--vp-c-brand-1); cursor: pointer; font-size: 13px; padding: 0; }
+.py-link:hover { text-decoration: underline; }
+.py-static div[class*='language-'] { margin: 0 !important; border-radius: 0 !important; }
+.py-editor { background: var(--vp-code-block-bg); }
+.py-editor-fallback { margin: 0; padding: 12px 16px; font-size: 14px; }
+.py-output { border-top: 1px dashed var(--vp-c-divider); padding: 8px 14px; font-size: 13px; background: var(--vp-c-bg); }
+.py-output pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--vp-font-family-mono); line-height: 1.6; }
+.py-stderr { color: var(--vp-c-danger-1); }
+.py-output-empty, .py-output-meta, .py-output-running { color: var(--vp-c-text-3); font-size: 12px; }
+.py-output-meta { margin-top: 4px; }
+.py-output-note { color: var(--vp-c-warning-1); font-size: 12px; margin-top: 4px; }
+.py-verdict { padding: 6px 14px; font-weight: 600; font-size: 14px; }
+.py-verdict-pass { background: var(--vp-c-green-soft); color: var(--vp-c-green-1); }
+.py-verdict-fail { background: var(--vp-c-danger-soft); color: var(--vp-c-danger-1); }
+.py-ex-footer { display: flex; gap: 16px; align-items: center; padding: 6px 14px; border-top: 1px solid var(--vp-c-divider); background: var(--vp-c-bg-soft); flex-wrap: wrap; }
+.py-reveal { border-top: 1px solid var(--vp-c-divider); padding: 8px 14px; background: var(--vp-c-bg); }
+.py-reveal pre { margin: 6px 0 0; font-size: 13px; white-space: pre-wrap; font-family: var(--vp-font-family-mono); }
+.py-reveal-head { font-size: 12px; color: var(--vp-c-text-2); display: flex; gap: 12px; }
+
+/* ---------- 进度 ---------- */
+.bar { height: 6px; border-radius: 999px; background: var(--vp-c-default-soft); overflow: hidden; }
+.bar.big { height: 10px; margin: 12px 0 20px; }
+.bar-fill { height: 100%; background: linear-gradient(90deg, var(--vp-c-brand-1), #ffd43b); transition: width .4s; }
+.sidebar-progress { padding: 14px 0 6px; }
+.sidebar-progress-label { font-size: 12px; color: var(--vp-c-text-2); margin-bottom: 6px; }
+.VPSidebar a.is-done .text::after { content: ' ✓'; color: var(--vp-c-green-1); font-weight: 700; }
+.lesson-footer {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 40px 0 8px; padding: 14px 18px; border-radius: 10px;
+  border: 1px solid var(--vp-c-divider); background: var(--vp-c-bg-soft); font-size: 14px;
+}
+.lesson-footer.done { border-color: var(--vp-c-green-2); background: var(--vp-c-green-soft); }
+
+/* ---------- 首页路线图 ---------- */
+.roadmap { max-width: 1152px; margin: 0 auto; padding: 8px 0 32px; }
+.roadmap-summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.roadmap-title { font-size: 22px; font-weight: 700; }
+.roadmap-sub { color: var(--vp-c-text-2); font-size: 14px; margin-top: 4px; }
+.roadmap-actions { display: flex; gap: 12px; align-items: center; }
+.roadmap-grid { list-style: none !important; padding: 0 !important; margin: 0 !important; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.roadmap-card { margin: 0 !important; border: 1px solid var(--vp-c-divider); border-radius: 12px; padding: 14px 16px; background: var(--vp-c-bg-soft); }
+.roadmap-card.complete { border-color: var(--vp-c-green-2); }
+.roadmap-card-head { display: flex; align-items: center; gap: 10px; }
+.roadmap-no { font-family: var(--vp-font-family-mono); font-weight: 700; color: var(--vp-c-brand-1); }
+.roadmap-card-title { font-weight: 700; font-size: 16px; color: var(--vp-c-text-1) !important; text-decoration: none !important; flex: 1; }
+.roadmap-count { font-size: 12px; color: var(--vp-c-text-3); }
+.roadmap-goal { font-size: 13px; color: var(--vp-c-text-2); margin: 6px 0 8px !important; line-height: 1.6; }
+.roadmap-lessons { margin: 0 !important; padding-left: 18px !important; font-size: 13px; }
+.roadmap-lessons li { margin: 2px 0 !important; }
+.roadmap-lessons li.done::marker { content: '✓  '; color: var(--vp-c-green-1); }
+.roadmap-lessons a { color: var(--vp-c-text-1) !important; text-decoration: none !important; }
+.roadmap-lessons a:hover { color: var(--vp-c-brand-1) !important; }

@@ -1,0 +1,31 @@
+{
+  "name": "jdp-python-course-site",
+  "private": true,
+  "type": "module",
+  "description": "jdp-python 课程网站（VitePress，内容源为 ../docs）",
+  "scripts": {
+    "prepare-assets": "node scripts/prepare-assets.mjs",
+    "dev": "npm run prepare-assets && vitepress dev . --host 127.0.0.1 --port 5180",
+    "build": "npm run prepare-assets && vitepress build .",
+    "preview": "node scripts/serve.mjs --host 127.0.0.1 --port 5180",
+    "smoke": "node scripts/smoke.mjs",
+    "verify:pyodide": "node scripts/verify-pyodide.mjs",
+    "serve:bg": "bash scripts/serve-bg.sh",
+    "verify": "python3 ../tests/check_course.py && node scripts/verify-pyodide.mjs"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/view": "^6.38.0",
+    "codemirror": "^6.0.2",
+    "pyodide": "314.0.7",
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}
