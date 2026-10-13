@@ -30,7 +30,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
@@ -208,6 +208,23 @@ def check_structure(path: Path, report: Report) -> None:
         report.fail(f"{where} 提到了具体 Python 版本，但缺少“核对日期”标注")
 
 
+def allowed_course_link(path: Path, href: str) -> bool:
+    """官方参考来源；仅术语表可复用指定 Wiki 的通用定义。"""
+    url = urlsplit(href)
+    if url.netloc in ALLOWED_DOMAINS:
+        return True
+    return (
+        path.resolve() == (COURSE / "附录" / "术语表.md").resolve()
+        and url.scheme == "https"
+        and url.netloc == "github.com"
+        and not url.query
+        and re.fullmatch(
+            r"/lixudong1649/jdp-wiki/blob/main/content/terms/[a-z0-9]+(?:-[a-z0-9]+)*\.md",
+            url.path,
+        ) is not None
+    )
+
+
 def check_links(path: Path, report: Report, strict_domains: bool) -> None:
     text = path.read_text(encoding="utf-8")
     # 去掉代码块，避免把代码中的方括号当作链接
@@ -217,8 +234,7 @@ def check_links(path: Path, report: Report, strict_domains: bool) -> None:
         href = m.group(1)
         where = f"{rel(path)}: {href}"
         if href.startswith(("http://", "https://")):
-            host = re.sub(r"^https?://([^/]+).*$", r"\1", href)
-            if strict_domains and not host.endswith(ALLOWED_DOMAINS):
+            if strict_domains and not allowed_course_link(path, href):
                 report.fail(f"{where} 非官方来源链接（仅允许 {', '.join(ALLOWED_DOMAINS)}）")
             else:
                 report.ok("link", where)

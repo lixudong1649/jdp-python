@@ -22,6 +22,8 @@ jobs:
 
       - uses: astral-sh/setup-uv@v10.2.0
 
+      - name: 参考链接规则回归检查
+        run: uv run --locked python -m unittest discover -s tests -p "test_*.py"
       - name: 课程校验（CPython，.python-version）
         run: uv run --locked python tests/check_course.py
 
