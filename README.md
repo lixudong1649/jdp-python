@@ -123,3 +123,13 @@ cd site && npm run smoke                     # 浏览器冒烟测试（需本机
 | 课程文字、表格与图示：`docs/` | [CC BY-NC-SA 4.0](LICENSE-CONTENT.md) |
 
 本项目仅用于学习，与 Python Software Foundation、Anthropic、DeepSeek 无隶属关系；相关商标归各自所有者所有。第三方组件（Pyodide 等）遵循各自许可。内容可能有误，欢迎通过 [Issues](https://github.com/lixudong1649/jdp-python/issues) 反馈。完整声明见 [关于](docs/关于.md)。
+
+## 维护、版权与项目声明
+
+- 维护者：[lixudong1649](https://github.com/lixudong1649)。
+- 项目地址：[项目仓库](https://github.com/lixudong1649/jdp-python)
+- 公开状态：公开源码仓库；网站可访问性与源码可见性分别判断。
+- 授权：许可范围以 [LICENSE-CONTENT.md](LICENSE-CONTENT.md)、[LICENSE](LICENSE) 及文件内声明为准；第三方代码、内容和素材沿用各自授权。
+- 版权沿用原有声明；第三方及上游作品归各自权利人，不因仓库由本人维护而改变归属。
+
+本项目以学习、实践与解决真实问题为目标，支持开源与知识分享，尊重隐私、创造者权益及不同文化，倡导诚实、负责的协作。项目能力与维护承诺以实际文档和验证结果为准。此声明不代替许可证，也不自动授予第三方作品权利。
