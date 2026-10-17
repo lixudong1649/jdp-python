@@ -47,7 +47,7 @@ uv sync                                   # 按 uv.lock 创建 .venv 并安装�
 uv run examples/agent/minimal_agent.py    # 运行最小 Agent 示例
 ```
 
-学习网站：`cd site && npm install && npm run build && npm run preview`，打开 http://127.0.0.1:5180/（详见下文）。
+学习网站：仓库根执行 `scripts/dev.sh start`（默认 VitePress dev，http://127.0.0.1:5180/），或 `cd site && npm install && npm run build && npm run preview`（详见下文）。
 
 ## 文档索引
 
@@ -82,6 +82,11 @@ uv run examples/agent/minimal_agent.py    # 运行最小 Agent 示例
 ### 启动网站
 
 ```bash
+# 推荐：仓库根统一启停（端口 JDP_PYTHON_SITE_PORT，默认 5180；登记 id jdp-python.site）
+scripts/dev.sh start          # 后台 dev，日志 logs/site.log
+scripts/dev.sh start --preview  # 先 build 再静态预览
+scripts/dev.sh status | stop | restart | logs
+
 cd site
 npm install            # 依赖仅安装在 site/node_modules
 npm run build          # 构建（会先把 Pyodide 与示例源码复制到 site/public/）

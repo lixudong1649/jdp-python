@@ -3,7 +3,7 @@
 # 用法：bash site/scripts/serve-bg.sh [--no-build]    停止：bash site/scripts/serve-bg.sh --stop
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PORT="${PORT:-5180}"
+PORT="${SERVER_PORT:-${PORT:-${JDP_PYTHON_SITE_PORT:-5180}}}"
 LOG=".vitepress/preview.log"
 PIDFILE=".vitepress/preview.pid"
 

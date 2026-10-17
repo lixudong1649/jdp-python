@@ -1,10 +1,11 @@
 // 浏览器冒烟测试（playwright-core + 本机 Chrome/Chromium）。
 // 用法：先启动站点（npm run preview），再执行 `npm run smoke`；
-// 可选环境变量：SMOKE_URL（默认 http://127.0.0.1:5180）、CHROME_PATH（浏览器可执行文件）。
+// 可选环境变量：SMOKE_URL（默认由 JDP_PYTHON_SITE_PORT / PORT 推导）、CHROME_PATH（浏览器可执行文件）。
 import fs from 'node:fs'
 import { chromium } from 'playwright-core'
 
-const BASE = process.env.SMOKE_URL || 'http://127.0.0.1:5180'
+const sitePort = process.env.SERVER_PORT || process.env.PORT || process.env.JDP_PYTHON_SITE_PORT || 5180
+const BASE = process.env.SMOKE_URL || `http://127.0.0.1:${sitePort}`
 const candidates = [
   process.env.CHROME_PATH,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',

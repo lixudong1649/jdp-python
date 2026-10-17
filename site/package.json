@@ -5,9 +5,9 @@
   "description": "jdp-python 课程网站（VitePress，内容源为 ../docs）",
   "scripts": {
     "prepare-assets": "node scripts/prepare-assets.mjs",
-    "dev": "npm run prepare-assets && vitepress dev . --host 127.0.0.1 --port 5180",
+    "dev": "npm run prepare-assets && vitepress dev . --host 127.0.0.1 --port ${JDP_PYTHON_SITE_PORT:-5180} --strictPort",
     "build": "npm run prepare-assets && vitepress build .",
-    "preview": "node scripts/serve.mjs --host 127.0.0.1 --port 5180",
+    "preview": "node scripts/serve.mjs --host 127.0.0.1 --port ${JDP_PYTHON_SITE_PORT:-5180}",
     "smoke": "node scripts/smoke.mjs",
     "verify:pyodide": "node scripts/verify-pyodide.mjs",
     "serve:bg": "bash scripts/serve-bg.sh",

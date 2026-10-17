@@ -13,7 +13,9 @@ const opt = (name, def) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : def
 }
 const host = opt('host', process.env.HOST || '127.0.0.1')
-const port = Number(opt('port', process.env.PORT || 5180))
+const port = Number(
+  opt('port', process.env.SERVER_PORT || process.env.PORT || process.env.JDP_PYTHON_SITE_PORT || 5180),
+)
 const siteDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const root = path.resolve(siteDir, opt('root', '.vitepress/dist'))
 const base = ('/' + opt('base', '/').replace(/^\/+|\/+$/g, '') + '/').replace(/^\/\/$/, '/')
