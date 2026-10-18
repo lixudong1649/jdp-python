@@ -7,3 +7,34 @@ dependencies = [
     "anthropic>=1.11.0",
     "python-dotenv>=1.2.4",
 ]
+
+[dependency-groups]
+data = [
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+web = [
+    "fastapi>=0.146.0",
+    "httpx>=0.28.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["examples/项目", "tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["E501", "E402", "E741"]
+"tests/check_course.py" = ["E501"]
+"examples/项目/13-计时重试装饰器/timing.py" = ["UP047"]

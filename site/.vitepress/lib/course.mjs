@@ -39,6 +39,7 @@ export function loadCourse(srcDir) {
       title: fm.title || m[2],
       short: m[2],
       goal: fm.goal || '',
+      layer: fm.layer || (Number(m[1]) <= 11 ? 'L1' : ''),
       link: `/课程/${dir}/`,
       lessons,
     })

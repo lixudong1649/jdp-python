@@ -84,6 +84,8 @@
 .roadmap-title { font-size: 22px; font-weight: 700; }
 .roadmap-sub { color: var(--vp-c-text-2); font-size: 14px; margin-top: 4px; }
 .roadmap-actions { display: flex; gap: 12px; align-items: center; }
+.roadmap-layer { margin-top: 28px; }
+.roadmap-layer-title { font-size: 1.05rem; margin: 0 0 12px; color: var(--vp-c-text-2); font-weight: 600; }
 .roadmap-grid { list-style: none !important; padding: 0 !important; margin: 0 !important; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 .roadmap-card { margin: 0 !important; border: 1px solid var(--vp-c-divider); border-radius: 12px; padding: 14px 16px; background: var(--vp-c-bg-soft); }
 .roadmap-card.complete { border-color: var(--vp-c-green-2); }

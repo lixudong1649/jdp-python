@@ -3,7 +3,7 @@ import { useData } from 'vitepress'
 import { progress, normPath } from './progress'
 
 export interface Lesson { title: string; link: string }
-export interface Stage { no: number; title: string; short: string; goal: string; link: string; lessons: Lesson[] }
+export interface Stage { no: number; title: string; short: string; goal: string; layer?: string; link: string; lessons: Lesson[] }
 
 export const LESSON_RE = /^\/课程\/\d\d-[^/]+\/\d\d-[^/]+$/
 

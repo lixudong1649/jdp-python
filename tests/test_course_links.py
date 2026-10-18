@@ -1,6 +1,8 @@
 """课程参考来源和术语复用链接的边界检查。"""
 import unittest
+
 from check_course import COURSE, allowed_course_link
+
 
 class CourseLinksTest(unittest.TestCase):
     def test_official_sources(self):

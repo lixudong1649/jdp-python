@@ -34,7 +34,7 @@ const tokenize = (text: string) => {
 export default defineConfig({
   lang: 'zh-CN',
   title: 'Python 读码实战课',
-  description: '面向开发者的系统化 Python 课程：浏览器内可运行示例、自动判题练习、读真实代码，终点是读懂 minimal_agent.py',
+  description: '面向开发者的系统化 Python 课程：浏览器内可运行示例、自动判题练习；v1 读懂 minimal_agent.py，v2 拓展写码、工程化、并发与方向实战',
   base,
   srcDir,
   srcExclude: ['**/README.md'],
@@ -90,7 +90,7 @@ export default defineConfig({
     externalLinkIcon: true,
     footer: {
       message: `代码 <a href="${REPO}/blob/main/LICENSE">MIT</a> · 课程内容 <a href="${REPO}/blob/main/LICENSE-CONTENT.md">CC BY-NC-SA 4.0</a> · <a href="${base}关于">关于与声明</a> · <a href="${REPO}/issues">反馈问题</a>`,
-      copyright: `© 2026 <a href="${AUTHOR}">lixudong1649</a> · 核对日期 2026-10-06`,
+      copyright: `© 2026 <a href="${AUTHOR}">lixudong1649</a> · 核对日期 2026-10-18`,
     },
     // 自定义字段：文档页底部版权行（默认页脚仅在无侧边栏页面显示）
     siteMeta: { repo: REPO, author: AUTHOR },

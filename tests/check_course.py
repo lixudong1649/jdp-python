@@ -38,7 +38,19 @@ COURSE = DOCS / "课程"
 RUNTIME = ROOT / "site" / "public" / "py-runtime.py"
 
 LESSON_SECTIONS = ["目标", "核心概念", "易错点", "对照", "读代码", "练习", "小结", "延伸阅读"]
-ALLOWED_DOMAINS = ("docs.python.org", "peps.python.org", "docs.astral.sh", "packaging.python.org")
+ALLOWED_DOMAINS = (
+    "docs.python.org",
+    "peps.python.org",
+    "docs.astral.sh",
+    "packaging.python.org",
+    "docs.pytest.org",
+    "mypy.readthedocs.io",
+    "numpy.org",
+    "pandas.pydata.org",
+    "fastapi.tiangolo.com",
+    "docs.pydantic.dev",
+    "jupyter.org",
+)
 FENCE_RE = re.compile(r"^(`{3,})(.*)$")
 SECTION_RE = re.compile(r"^# --- (starter|solution|check) ---\s*$")
 LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
