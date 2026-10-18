@@ -11,3 +11,7 @@ def test_main(tmp_path: Path) -> None:
     p = tmp_path / "x.log"
     p.write_text("INFO x\n", encoding="utf-8")
     assert main(p) == 0
+
+
+def test_count_levels_empty() -> None:
+    assert dict(count_levels("")) == {}
