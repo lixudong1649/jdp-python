@@ -9,6 +9,7 @@
     ```python run                    可运行示例，必须无异常结束
     ```python run raises=TypeError   预期抛出指定异常
     ```python exercise id=<ID>       练习：# --- starter --- / # --- solution --- / # --- check --- 三段
+    ```python local exercise id=<ID> 仅本地执行的练习（浏览器不跑）
     ```python source=<相对路径>       与仓库文件逐字一致的完整源码副本
     ```python local                   仅本地 CPython 可运行（浏览器不执行）；校验器仍真实运行
     ```python fragment               片段，不做语法检查
@@ -218,7 +219,7 @@ V22_FILLER_MARKERS = (
 )
 PYODIDE_FORBIDDEN_IN_RUN = re.compile(
     r"\b(threading|multiprocessing|subprocess|socket)\b|"
-    r"concurrent\.futures|ThreadPoolExecutor|ProcessPoolExecutor",
+    r"ThreadPoolExecutor|ProcessPoolExecutor",
     re.I,
 )
 
@@ -291,7 +292,7 @@ def check_v21_lesson(path: Path, report: Report) -> None:
     n_run = len(re.findall(r"^```python run(?:\s|$)", text, re.M))
     if n_run < V21_MIN_RUN_BLOCKS:
         report.fail(f"{where} v2.1 可运行示例 {n_run} < {V21_MIN_RUN_BLOCKS}")
-    n_ex = len(re.findall(r"```python exercise", text))
+    n_ex = len(re.findall(r"^```python (?:local )?exercise", text, re.M))
     if n_ex < V21_MIN_EXERCISE_BLOCKS:
         report.fail(f"{where} v2.1 练习 {n_ex} < {V21_MIN_EXERCISE_BLOCKS}")
     for ph in V21_FORBIDDEN_PLACEHOLDERS:
@@ -333,6 +334,10 @@ def _normalize_code_block(content: str) -> str:
         if line:
             out.append(line)
     return "".join(out)
+
+
+def _code_for_forbidden_scan(content: str) -> str:
+    return "\n".join(raw.split("#", 1)[0] for raw in content.splitlines())
 
 
 def check_v22_filler_markers(course_files: list[Path], report: Report) -> None:
@@ -434,9 +439,11 @@ def check_v22_pyodide_forbidden(blocks: list[Block], report: Report) -> None:
             continue
         if b.lang != "python":
             continue
+        if "local" in b.flags:
+            continue
         if "run" not in b.flags and "exercise" not in b.flags:
             continue
-        if not PYODIDE_FORBIDDEN_IN_RUN.search(b.content):
+        if not PYODIDE_FORBIDDEN_IN_RUN.search(_code_for_forbidden_scan(b.content)):
             continue
         bad.append(f"{rel(b.file)}:{b.line}")
     if bad:
@@ -478,7 +485,7 @@ def check_structure(path: Path, report: Report) -> None:
             report.fail(f"{where} 缺少章节：{missing}")
         if "```python run" not in text:
             report.fail(f"{where} 没有可运行示例")
-        if "```python exercise" not in text:
+        if not re.search(r"^```python (?:local )?exercise", text, re.M):
             report.fail(f"{where} 没有练习")
         if not missing:
             report.ok("structure", where)

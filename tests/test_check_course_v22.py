@@ -2,15 +2,15 @@
 import unittest
 
 from check_course import (
+    COURSE,
     Block,
     Report,
+    _normalize_code_block,
     check_v22_duplicate_code_blocks,
     check_v22_duplicate_text,
     check_v22_filler_markers,
     check_v22_pyodide_forbidden,
     normalize_v22_text,
-    _normalize_code_block,
-    COURSE,
 )
 
 
@@ -29,10 +29,12 @@ class NormalizeV22Test(unittest.TestCase):
 class V22GatesTest(unittest.TestCase):
     def test_filler_marker_detected(self):
         report = Report()
-        p = COURSE / "12-数据模型与协议" / "01-特殊方法全景.md"
-        if not p.exists():
-            self.skipTest("课程文件不存在")
-        check_v22_filler_markers([p], report)
+        probe = COURSE / "12-数据模型与协议" / "99-gate-probe.md"
+        probe.write_text("---\ntitle: probe\n---\n# probe\n课堂延展\n", encoding="utf-8")
+        try:
+            check_v22_filler_markers([probe], report)
+        finally:
+            probe.unlink(missing_ok=True)
         self.assertTrue(report.failed)
 
     def test_pyodide_forbidden_threading(self):

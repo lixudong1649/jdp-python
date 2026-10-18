@@ -120,6 +120,8 @@ for (const file of files) {
         const hint = r.phase === 'timeout' ? `超时 @ ${where}` : (r.err || '意外成功').trim().split('\n').slice(-3).join(' | ')
         failures.push(`${where} 示例${want ? `（预期 ${want}）` : ''}：${hint}`)
       }
+    } else if (b.info.flags.has('exercise') && b.info.flags.has('local')) {
+      stats.skippedLocal++
     } else if (b.info.flags.has('exercise')) {
       const ex = parseExercise(b.content)
       const id = b.info.attrs.id

@@ -2,6 +2,7 @@ import { h } from 'vue'
 import DefaultTheme from 'vitepress/theme'
 import type { Theme } from 'vitepress'
 import PyRunner from './components/PyRunner.vue'
+import PyLocalCode from './components/PyLocalCode.vue'
 import PyExercise from './components/PyExercise.vue'
 import CourseRoadmap from './components/CourseRoadmap.vue'
 import LessonFooter from './components/LessonFooter.vue'
@@ -19,6 +20,7 @@ export default {
     }),
   enhanceApp({ app }) {
     app.component('PyRunner', PyRunner)
+    app.component('PyLocalCode', PyLocalCode)
     app.component('PyExercise', PyExercise)
     app.component('CourseRoadmap', CourseRoadmap)
   },

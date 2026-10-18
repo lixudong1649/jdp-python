@@ -2,6 +2,8 @@
 //   ```python run                      可运行示例，必须无异常结束
 //   ```python run raises=TypeError     可运行示例，预期抛出指定异常（演示报错）
 //   ```python exercise id=<唯一ID>      练习：内部用 starter / solution / check 三段分隔
+//   ```python local                    仅本地 CPython 可运行（浏览器不执行，显示「需在本地运行」）
+//   ```python local exercise id=<ID>    练习：仅本地执行，浏览器不跑
 //   ```python fragment                 片段，仅展示，不做语法检查
 //   ```python                          静态代码，仅展示（校验器会做语法检查）
 

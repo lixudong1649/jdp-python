@@ -13,6 +13,17 @@ export function coursePlugin(md, { srcDir, projectRoot, base = '/' }) {
   md.renderer.rules.fence = (tokens, idx, options, env, self) => {
     const t = tokens[idx]
     const info = parseInfo(t.info)
+    if (info.lang === 'python' && info.flags.has('local') && info.flags.has('exercise')) {
+      const ex = parseExercise(t.content)
+      const id = info.attrs.id || `ex-${idx}`
+      return `<PyExercise ex-id="${escAttr(id)}" local data="${toB64(JSON.stringify(ex))}"></PyExercise>\n`
+    }
+    if (info.lang === 'python' && info.flags.has('local')) {
+      t.info = 'python'
+      const fallback = fence(tokens, idx, options, env, self)
+      const raises = info.attrs.raises ? ` raises="${escAttr(info.attrs.raises)}"` : ''
+      return `<PyLocalCode${raises}>${fallback}</PyLocalCode>\n`
+    }
     if (info.lang === 'python' && info.flags.has('run')) {
       t.info = 'python'
       const fallback = fence(tokens, idx, options, env, self)

@@ -5,7 +5,7 @@ import RunOutput from './RunOutput.vue'
 import { b64decode, runPython, warmup, status, runtimeInfo, type RunResult } from '../pyodide-client'
 import { initProgress, isExercisePassed, markExercisePassed } from '../progress'
 
-const props = defineProps<{ exId: string; data: string }>()
+const props = defineProps<{ exId: string; data: string; local?: boolean }>()
 const ex = JSON.parse(b64decode(props.data)) as { starter: string; solution: string; check: string }
 const DRAFT_KEY = `jdp-python-course:draft:${props.exId}`
 
@@ -61,12 +61,16 @@ function loadSolution() {
   <div class="py-exercise" :data-exercise-id="exId" :data-passed="passed ? '1' : '0'">
     <div class="py-toolbar">
       <span class="py-badge py-badge-ex">练习</span>
+      <span v-if="local" class="py-badge py-badge-warn">需在本地运行</span>
       <span v-if="passed" class="py-badge py-badge-ok">✓ 已通过</span>
       <span class="py-spacer" />
       <span v-if="status === 'loading'" class="py-status">正在加载 Python 运行时…</span>
       <button class="py-btn" @click="reset">重置</button>
-      <button class="py-btn" :disabled="running" @pointerenter="warmup" @click="run">▶ 运行</button>
-      <button class="py-btn py-btn-primary" :disabled="running" @pointerenter="warmup" @click="check">✓ 提交检查</button>
+      <template v-if="!local">
+        <button class="py-btn" :disabled="running" @pointerenter="warmup" @click="run">▶ 运行</button>
+        <button class="py-btn py-btn-primary" :disabled="running" @pointerenter="warmup" @click="check">✓ 提交检查</button>
+      </template>
+      <span v-else class="py-hint">请用本地解释器运行 check 段验证</span>
     </div>
     <CodeEditor v-model="source" :min-lines="6" @run="check" @focus="warmup" />
     <div v-if="verdict === 'pass'" class="py-verdict py-verdict-pass">✅ 全部检查通过</div>
