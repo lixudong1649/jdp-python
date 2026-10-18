@@ -12,4 +12,4 @@ goal: 逐行讲清 minimal_agent.py；在浏览器中运行并改造完整的 Ag
 | [11.1 minimal_agent.py 逐行精读](01-minimal_agent逐行精读.md) | 全文逐段精读、语法到课程的映射、用模拟客户端在浏览器中运行完整循环 |
 | [11.2 改造与自测](02-改造与自测.md) | 增加工具、并行工具调用、错误处理与参数校验、终点自测题 |
 
-前置：阶段 1–10。可配合阅读项目已有的 [minimal_agent.py 语法速查](../../代码解读/minimal_agent.md) 与 [示例说明](../../../examples/agent/README.md)。
+前置：阶段 1–10。可配合阅读项目已有的 [minimal_agent.py 语法速查](../../代码解读/minimal_agent.md) 与 [示例说明](../../../examples/agent/index.md)。

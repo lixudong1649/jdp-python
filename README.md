@@ -62,7 +62,7 @@ uv run examples/agent/minimal_agent.py    # 运行最小 Agent 示例
 
 - [Python 概览与环境](docs/Python概览与环境.md)：Python 是什么、版本现状、uv 环境
 - [读懂 minimal_agent.py](docs/代码解读/minimal_agent.md)：示例代码逐段解读（课程中的逐行精读见 [11.1](docs/课程/11-简单项目/01-minimal_agent逐行精读.md)）
-- [examples/agent](examples/agent/README.md)：最小 Agent 循环的原理、运行与验证结果
+- [examples/agent](examples/agent/index.md)：最小 Agent 循环的原理、运行与验证结果
 
 项目：
 
@@ -73,7 +73,7 @@ uv run examples/agent/minimal_agent.py    # 运行最小 Agent 示例
 
 | 实验 | 目的 | 依赖 | 状态（2026-10-06） | 说明 |
 |---|---|---|---|---|
-| 最小 Agent 循环 | 理解“模型决定 → 执行工具 → 回填结果”循环 | `anthropic`、`python-dotenv` | DeepSeek（`deepseek-flash`，Anthropic 兼容端点）已实测通过；Anthropic 官方 API 未实测 | [examples/agent](examples/agent/README.md) |
+| 最小 Agent 循环 | 理解“模型决定 → 执行工具 → 回填结果”循环 | `anthropic`、`python-dotenv` | DeepSeek（`deepseek-flash`，Anthropic 兼容端点）已实测通过；Anthropic 官方 API 未实测 | [examples/agent](examples/agent/index.md) |
 
 ## Python 课程与学习网站（2026-10-06 新增）
 

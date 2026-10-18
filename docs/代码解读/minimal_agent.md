@@ -1,6 +1,6 @@
 # 读懂 minimal_agent.py
 
-逐段解读 [examples/agent/minimal_agent.py](../../examples/agent/minimal_agent.py)，把每处语法对应到 [学习路线](../学习路线.md) 的阶段。循环原理与运行方式见 [examples/agent/README.md](../../examples/agent/README.md)。
+逐段解读 [examples/agent/minimal_agent.py](../../examples/agent/minimal_agent.py)，把每处语法对应到 [学习路线](../学习路线.md) 的阶段。循环原理与运行方式见 [examples/agent/index.md](../../examples/agent/index.md)。
 
 > 本文是按语法分类的速查；按执行顺序的逐行精读、可运行模拟与练习见课程 [11.1 minimal_agent.py 逐行精读](../课程/11-简单项目/01-minimal_agent逐行精读.md)，改造练习见 [11.2 改造与自测](../课程/11-简单项目/02-改造与自测.md)。
 
