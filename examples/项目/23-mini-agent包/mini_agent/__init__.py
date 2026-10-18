@@ -1,4 +1,4 @@
-from mini_agent.runner import run_tool
-from mini_agent.tools import REGISTRY, tool
+from mini_agent.runner import describe_tool, run_tool
+from mini_agent.tools import REGISTRY, list_tools, tool
 
-__all__ = ["REGISTRY", "run_tool", "tool"]
+__all__ = ["REGISTRY", "describe_tool", "list_tools", "run_tool", "tool"]
