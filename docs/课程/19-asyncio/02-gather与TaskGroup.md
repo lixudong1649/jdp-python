@@ -86,61 +86,6 @@ print("gather" in names, len(names) == 3)
 ```
 
 
-### 课堂延展：gather 与 TaskGroup
-
-本段补充对应 `docs/课程/19-asyncio/02-gather与TaskGroup.md`，帮助把课文与阶段 19 项目里的真实文件对齐；建议边读边在仓库里搜索 `02-gather与TaskGroup` 相关符号，而不是只扫一眼示例输出。
-
-- 复盘目标 1：用 `asyncio.gather` 并发多个协程并收集结果顺序。 —— 用五分钟写一句「我能在自己的脚本里如何复现」的笔记，再对照项目测试是否覆盖该行为。
-- 复盘目标 2：理解 `return_exceptions=True` 与默认「首异常即失败」的差异。 —— 用五分钟写一句「我能在自己的脚本里如何复现」的笔记，再对照项目测试是否覆盖该行为。
-- 复盘目标 3：知道 `asyncio.TaskGroup` 提供 **结构化并发**：子任务失败会取消同组其余任务（3.11+）。 —— 用五分钟写一句「我能在自己的脚本里如何复现」的笔记，再对照项目测试是否覆盖该行为。
-- 复盘目标 4：能把「并行多个 tool / 多个 HTTP」映射到 gather 或 TaskGroup 模式。 —— 用五分钟写一句「我能在自己的脚本里如何复现」的笔记，再对照项目测试是否覆盖该行为。
-- 阶段 19 的相邻课程会反复出现同一术语；遇到陌生缩写时回到本课「对照」表，用 JS/Java 栏提醒自己 Python 的惯用写法。（02-gather与TaskGroup·1）
-- 读仓库代码时优先打开 `examples/项目/` 下与本课编号接近的目录，观察模块边界与 `if __name__ == '__main__'` 入口是否分离。（02-gather与TaskGroup·2）
-- 若 Pyodide 与本地输出存在细小差异，以 `uv run python tests/check_course.py -k 19-asyncio` 为准；浏览器端主要用于交互体验。（02-gather与TaskGroup·3）
-- 把本课一个 `python run` 块复制到临时文件单跑，改坏一处再修回来，比通读全文更能发现隐含的 API 约束。（02-gather与TaskGroup·4）
-- 写练习前先让 starter 故意失败一次，确认 check 段真的会捕获错误；这与阶段 15 的测试思维一致。（02-gather与TaskGroup·5）
-- 小结里的链接尽量点开一次：官方文档的「另见」小节常包含本课未展开但项目会遇到的边角行为。（02-gather与TaskGroup·6）
-- 团队评审时可用本课「易错点」当检查清单，对 PR 逐条问「有没有踩到这一条」。（02-gather与TaskGroup·7）
-- 若你维护 fork 课程站，请保持 frontmatter `title` 与 H1 一致，避免站内搜索出现双标题。（02-gather与TaskGroup·8）
-
-下面再跑一个与《02-gather与TaskGroup》主题相关的小例子，巩固「能执行、能改、能解释输出」：
-
-```python run
-import asyncio
-
-sig = asyncio.gather.__doc__ or ""
-print("gather" in asyncio.gather.__name__, "return_exceptions" in sig)
-```
-
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·0）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·1）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·2）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·3）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·4）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·5）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·6）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·7）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·8）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·9）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·10）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·11）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·12）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·13）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·14）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·15）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·16）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·17）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·18）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·19）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·20）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·21）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·22）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·23）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·24）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·25）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·26）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/19-asyncio/02-gather与TaskGroup.md·27）：若让你向同事用三分钟讲清「19.2 gather 与 TaskGroup」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-
 ## 易错点
 
 - **gather 参数传协程对象还是 Task**：都可；若需中途取消，先 `create_task` 保留句柄。
@@ -259,7 +204,6 @@ for c in cs:
     c.close()
 ```
 
-- 达标备注（docs/课程/19-asyncio/02-gather与TaskGroup.md）：本课正文非空行已对齐 v2.1 深化门槛，可与 `tests/check_course.py` 一并验收。
 
 ## 小结
 
