@@ -199,6 +199,117 @@ def check_blocks(blocks: list[Block], pythons: list[str], report: Report, seen_i
                 report.fail(f"{tag} {want}，实际：{res.get('errType') or '成功'}\n    {res.get('err', '').strip()[-800:]}")
 
 
+V21_MIN_BODY_LINES = 150
+V21_MIN_RUN_BLOCKS = 3
+V21_MIN_EXERCISE_BLOCKS = 2
+V21_MIN_COMPARE_ROWS = 3
+V21_STAGE_MIN = 12
+V21_FORBIDDEN_PLACEHOLDERS = ("见官方文档", "TODO", "待补充", "后续补充")
+V21_DUP_LINE_MAX = 3  # 同一行正文在 12–24 阶段课程中出现超过此次数视为凑数
+
+
+def _lesson_stage(path: Path) -> int | None:
+    if path.parent.parent != COURSE:
+        return None
+    m = re.match(r"^(\d\d)-", path.parent.name)
+    if not m or not re.match(r"^\d\d-", path.name):
+        return None
+    return int(m.group(1))
+
+
+def _body_without_frontmatter(text: str) -> str:
+    if text.startswith("---\n"):
+        end = text.find("\n---\n", 4)
+        if end != -1:
+            return text[end + 5 :]
+    return text
+
+
+def _count_compare_rows(text: str) -> int:
+    """对照表中的数据行（非表头、非 --- 分隔行）。"""
+    if "## 对照" not in text:
+        return 0
+    section = text.split("## 对照", 1)[1].split("\n## ", 1)[0]
+    rows = 0
+    for line in section.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        inner = line.strip("|").strip()
+        if not inner or re.match(r"^[-:\s|]+$", inner):
+            continue
+        if "概念" in inner and "Python" in inner:
+            continue
+        rows += 1
+    return rows
+
+
+def _collect_v21_lines(path: Path) -> list[str]:
+    body = _body_without_frontmatter(path.read_text(encoding="utf-8"))
+    lines = []
+    in_fence = False
+    for line in body.splitlines():
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        if s.startswith("|"):
+            continue
+        lines.append(s)
+    return lines
+
+
+def check_v21_lesson(path: Path, report: Report) -> None:
+    stage = _lesson_stage(path)
+    if stage is None or stage < V21_STAGE_MIN:
+        return
+    text = path.read_text(encoding="utf-8")
+    where = rel(path)
+    body = _body_without_frontmatter(text)
+    n_body = len([ln for ln in body.splitlines() if ln.strip()])
+    if n_body < V21_MIN_BODY_LINES:
+        report.fail(f"{where} v2.1 正文行数 {n_body} < {V21_MIN_BODY_LINES}")
+    n_run = len(re.findall(r"```python run", text))
+    if n_run < V21_MIN_RUN_BLOCKS:
+        report.fail(f"{where} v2.1 可运行示例 {n_run} < {V21_MIN_RUN_BLOCKS}")
+    n_ex = len(re.findall(r"```python exercise", text))
+    if n_ex < V21_MIN_EXERCISE_BLOCKS:
+        report.fail(f"{where} v2.1 练习 {n_ex} < {V21_MIN_EXERCISE_BLOCKS}")
+    for ph in V21_FORBIDDEN_PLACEHOLDERS:
+        if ph in text:
+            report.fail(f"{where} v2.1 含占位：{ph}")
+    if "略" in text and "策略" not in text and "省略" not in text:
+        report.fail(f"{where} v2.1 含占位：略")
+    n_cmp = _count_compare_rows(text)
+    if n_cmp < V21_MIN_COMPARE_ROWS:
+        report.fail(f"{where} v2.1 对照表数据行 {n_cmp} < {V21_MIN_COMPARE_ROWS}")
+    else:
+        report.ok("v21_structure", f"{where} v2.1 结构量化")
+
+
+def check_v21_duplicate_lines(course_files: list[Path], report: Report) -> None:
+    v21 = [p for p in course_files if (_lesson_stage(p) or 0) >= V21_STAGE_MIN]
+    counts: dict[str, int] = {}
+    for p in v21:
+        seen_in_file: set[str] = set()
+        for line in _collect_v21_lines(p):
+            if line in seen_in_file:
+                continue
+            seen_in_file.add(line)
+            counts[line] = counts.get(line, 0) + 1
+    offenders = [(line, n) for line, n in counts.items() if n > V21_DUP_LINE_MAX]
+    if offenders:
+        offenders.sort(key=lambda x: -x[1])
+        sample = "; ".join(f"「{t[:40]}…」×{n}" if len(t) > 40 else f"「{t}」×{n}" for t, n in offenders[:5])
+        report.fail(f"v2.1 重复正文行 {len(offenders)} 条（>3 课重复），示例：{sample}")
+    else:
+        report.ok("v21_dup", "v2.1 重复行检查")
+
+
 def check_structure(path: Path, report: Report) -> None:
     text = path.read_text(encoding="utf-8")
     where = rel(path)
@@ -291,8 +402,10 @@ def main() -> int:
     all_blocks = []
     for f in course_files:
         check_structure(f, report)
+        check_v21_lesson(f, report)
         check_links(f, report, strict_domains=True)
         all_blocks += parse_blocks(f)
+    check_v21_duplicate_lines(course_files, report)
     for f in other_docs:
         check_links(f, report, strict_domains=False)
         if f.name == "课程大纲.md":
@@ -303,7 +416,8 @@ def main() -> int:
         for p in report.passed:
             print("  ✓", p)
     labels = {"example": "示例运行", "exercise": "练习参考答案通过", "starter": "练习起始代码被判失败",
-              "static": "静态代码语法", "source": "源码副本一致", "structure": "课程结构", "link": "链接"}
+              "static": "静态代码语法", "source": "源码副本一致", "structure": "课程结构", "link": "链接",
+              "v21_structure": "v2.1 量化结构", "v21_dup": "v2.1 重复行"}
     print("\n通过：")
     for k, label in labels.items():
         if report.counts.get(k):
