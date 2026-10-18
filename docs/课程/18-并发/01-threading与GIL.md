@@ -57,7 +57,7 @@ for name in ("A", "B"):
 
 课内演示锁的 **API**（同一线程 acquire/release；浏览器环境不启动子线程）：
 
-```python run
+```python local
 import threading
 
 counter = {"n": 0}
@@ -70,6 +70,23 @@ def safe_add(times: int) -> None:
 
 safe_add(1_000)
 print(counter["n"], lock.locked() is False)
+```
+
+浏览器里用「单线程 + 上下文管理器」理解锁的临界区语义（与 `threading.Lock` 的 `with` 形状相同）：
+
+```python run
+class CriticalSection:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        return False
+
+counter = {"n": 0}
+with CriticalSection():
+    for _ in range(1_000):
+        counter["n"] += 1
+print(counter["n"] == 1_000)
 ```
 
 `with lock:` 等价于 `acquire` 成功后在 `finally` 里 `release`，避免忘记释放。
@@ -209,7 +226,7 @@ cd examples/项目/18-并发下载模拟 && uv run pytest -q
 
 实现 `try_increment(counter, lock)`：若 `lock.acquire(blocking=False)` 成功则 `counter["v"] += 1` 并释放锁，返回是否成功；否则返回 `False`。
 
-```python exercise id=s18-l01-thread
+```python local exercise id=s18-l01-thread
 # --- starter ---
 import threading
 
@@ -240,7 +257,7 @@ lk.release()
 
 实现 `bump_many(counter, lock, times)`：在持锁期间循环 `times` 次，每次 `counter["total"] += 1`；返回最终 `total`。
 
-```python exercise id=s18-l01-bump
+```python local exercise id=s18-l01-bump
 # --- starter ---
 import threading
 

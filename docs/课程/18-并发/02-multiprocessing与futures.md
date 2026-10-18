@@ -94,7 +94,7 @@ if __name__ == "__main__":
 默认 `min(32, os.cpu_count() + 4)`（线程池）。I/O 密集可适当加大；CPU 密集进程池常取 **CPU 核数**，过大反而上下文切换浪费。
 
 ```python run
-# 默认线程池 worker 上限公式（与 ThreadPoolExecutor 默认策略一致，课内不调用 os.cpu_count）
+# 默认线程池 worker 上限公式（与标准库默认策略一致，课内用固定 logical_cpus 演示）
 logical_cpus = 4
 default_workers = min(32, logical_cpus + 4)
 print(logical_cpus, default_workers == 8)
@@ -102,64 +102,37 @@ print(logical_cpus, default_workers == 8)
 
 `shutdown(wait=True)` 会阻塞直到已提交任务结束；在长时间服务里，更常见的是在 `with` 块退出时自动 `shutdown`，或显式 `executor.shutdown(cancel_futures=True)` 放弃未开始的任务（3.9+ `cancel_futures` 参数）。读服务端代码时看到 `wait=False` 要警惕：主线程可能先退出而任务仍在跑。
 
-
-### 课堂延展：multiprocessing 与 futures
-
-本段补充对应 `docs/课程/18-并发/02-multiprocessing与futures.md`，帮助把课文与阶段 18 项目里的真实文件对齐；建议边读边在仓库里搜索 `02-multiprocessing与futures` 相关符号，而不是只扫一眼示例输出。
-
-- 复盘目标 1：理解 `concurrent.futures` 把 **线程池** 与 **进程池** 统一成 `Executor` + `Future` 模型。 —— 用五分钟写一句「我能在自己的脚本里如何复现」的笔记，再对照项目测试是否覆盖该行为。
-- 复盘目标 2：知道 `submit` / `map` / `as_completed` 的语义差异与返回顺序。 —— 用五分钟写一句「我能在自己的脚本里如何复现」的笔记，再对照项目测试是否覆盖该行为。
-- 复盘目标 3：能说明进程池适合 CPU 密集，但启动成本与 **pickle** 限制要纳入设计。 —— 用五分钟写一句「我能在自己的脚本里如何复现」的笔记，再对照项目测试是否覆盖该行为。
-- 复盘目标 4：把阶段 18 下载模拟里的 `ThreadPoolExecutor` 与进程池对比选型。 —— 用五分钟写一句「我能在自己的脚本里如何复现」的笔记，再对照项目测试是否覆盖该行为。
-- 阶段 18 的相邻课程会反复出现同一术语；遇到陌生缩写时回到本课「对照」表，用 JS/Java 栏提醒自己 Python 的惯用写法。（02-multiprocessing与futures·1）
-- 读仓库代码时优先打开 `examples/项目/` 下与本课编号接近的目录，观察模块边界与 `if __name__ == '__main__'` 入口是否分离。（02-multiprocessing与futures·2）
-- 若 Pyodide 与本地输出存在细小差异，以 `uv run python tests/check_course.py -k 18-并发` 为准；浏览器端主要用于交互体验。（02-multiprocessing与futures·3）
-- 把本课一个 `python run` 块复制到临时文件单跑，改坏一处再修回来，比通读全文更能发现隐含的 API 约束。（02-multiprocessing与futures·4）
-- 写练习前先让 starter 故意失败一次，确认 check 段真的会捕获错误；这与阶段 15 的测试思维一致。（02-multiprocessing与futures·5）
-- 小结里的链接尽量点开一次：官方文档的「另见」小节常包含本课未展开但项目会遇到的边角行为。（02-multiprocessing与futures·6）
-- 团队评审时可用本课「易错点」当检查清单，对 PR 逐条问「有没有踩到这一条」。（02-multiprocessing与futures·7）
-- 若你维护 fork 课程站，请保持 frontmatter `title` 与 H1 一致，避免站内搜索出现双标题。（02-multiprocessing与futures·8）
-
-下面再跑一个与《02-multiprocessing与futures》主题相关的小例子，巩固「能执行、能改、能解释输出」：
+课内用已完成的 `Future` 模拟 `as_completed` 的「先完成先取结果」语义（不启动线程）：
 
 ```python run
-import threading
+from concurrent.futures import Future
 
-lock = threading.Lock()
-counter = {"n": 0}
+def drain_done(futs: list[Future[int]]) -> list[int]:
+    pending = list(futs)
+    out: list[int] = []
+    while pending:
+        for f in list(pending):
+            if f.done():
+                out.append(f.result())
+                pending.remove(f)
+    return out
 
-def inc(times: int) -> None:
-    with lock:
-        for _ in range(times):
-            counter["n"] += 1
-
-# Pyodide 不启动 OS 线程；本地线程池里每个任务可调用同样的 inc
-inc(5)
-print(counter["n"] == 5, type(lock).__name__ == "lock")
+slow, fast = Future(), Future()
+fast.set_result(2)
+slow.set_result(1)
+print(drain_done([slow, fast]))
 ```
 
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·0）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·1）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·2）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·3）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·4）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·5）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·6）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·7）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·8）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·9）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·10）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·11）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·12）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·13）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·14）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·15）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·16）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·17）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·18）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·19）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·20）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
-自测题（docs/课程/18-并发/02-multiprocessing与futures.md·21）：若让你向同事用三分钟讲清「18.2 multiprocessing 与 futures」的核心差别，你会举哪个仓库路径下的哪几行代码作为证据？写下路径与行号范围。
+本地进程池（CPU 密集、可 pickle 的顶层函数）：
+
+```python local
+import os
+from concurrent.futures import ProcessPoolExecutor
+
+cpus = os.cpu_count() or 1
+# 在独立 .py 模块里定义顶层 def 任务函数，再在本机运行进程池（校验器子进程内无法 pickle 临时脚本里的函数）
+print(cpus, ProcessPoolExecutor is not None)
+```
 
 ## 易错点
 
@@ -267,7 +240,6 @@ assert labels_in_order(["b", "a"]) == ["body:b", "body:a"]
 assert labels_in_order([]) == []
 ```
 
-- 达标备注（docs/课程/18-并发/02-multiprocessing与futures.md）：本课正文非空行已对齐 v2.1 深化门槛，可与 `tests/check_course.py` 一并验收。
 
 ## 小结
 
