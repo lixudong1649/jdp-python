@@ -10,6 +10,7 @@
     ```python run raises=TypeError   预期抛出指定异常
     ```python exercise id=<ID>       练习：# --- starter --- / # --- solution --- / # --- check --- 三段
     ```python source=<相对路径>       与仓库文件逐字一致的完整源码副本
+    ```python local                   仅本地 CPython 可运行（浏览器不执行）；校验器仍真实运行
     ```python fragment               片段，不做语法检查
     ```python                        静态代码，做语法检查（compile）
 
@@ -144,7 +145,7 @@ def check_blocks(blocks: list[Block], pythons: list[str], report: Report, seen_i
         where = f"{rel(b.file)}:{b.line}"
         if b.lang != "python":
             continue
-        if "run" in b.flags:
+        if "run" in b.flags or "local" in b.flags:
             for py in pythons:
                 jobs.append((where, ("raises", b.attrs["raises"]) if "raises" in b.attrs else ("ok", None), py, b.content, "", "example"))
         elif "exercise" in b.flags:
@@ -205,7 +206,21 @@ V21_MIN_EXERCISE_BLOCKS = 2
 V21_MIN_COMPARE_ROWS = 3
 V21_STAGE_MIN = 12
 V21_FORBIDDEN_PLACEHOLDERS = ("见官方文档", "TODO", "待补充", "后续补充")
-V21_DUP_LINE_MAX = 3  # 同一行正文在 12–24 阶段课程中出现超过此次数视为凑数
+V21_DUP_LINE_MAX = 3  # 同一归一化正文行/句在 12–24 阶段课程中出现超过此次数视为凑数
+V22_DUP_IN_LESSON_MAX = 2  # 同一课内归一化行/句超过此次数视为凑数
+V22_FILLER_MARKERS = (
+    ("课堂延展", "D1 课堂延展小节"),
+    ("达标备注", "D2 达标备注行"),
+    ("三分钟讲清", "D3 模板自测题"),
+    ("写下路径与行号范围", "D3 模板自测题"),
+    ("可与 tests/check_course.py 一并验收", "写给检查脚本的句子"),
+    ("本课正文非空行已对齐", "写给检查脚本的句子"),
+)
+PYODIDE_FORBIDDEN_IN_RUN = re.compile(
+    r"\b(threading|multiprocessing|subprocess|socket)\b|"
+    r"concurrent\.futures|ThreadPoolExecutor|ProcessPoolExecutor",
+    re.I,
+)
 
 
 def _lesson_stage(path: Path) -> int | None:
@@ -273,7 +288,7 @@ def check_v21_lesson(path: Path, report: Report) -> None:
     n_body = len([ln for ln in body.splitlines() if ln.strip()])
     if n_body < V21_MIN_BODY_LINES:
         report.fail(f"{where} v2.1 正文行数 {n_body} < {V21_MIN_BODY_LINES}")
-    n_run = len(re.findall(r"```python run", text))
+    n_run = len(re.findall(r"^```python run(?:\s|$)", text, re.M))
     if n_run < V21_MIN_RUN_BLOCKS:
         report.fail(f"{where} v2.1 可运行示例 {n_run} < {V21_MIN_RUN_BLOCKS}")
     n_ex = len(re.findall(r"```python exercise", text))
@@ -291,7 +306,147 @@ def check_v21_lesson(path: Path, report: Report) -> None:
         report.ok("v21_structure", f"{where} v2.1 结构量化")
 
 
+def normalize_v22_text(line: str) -> str:
+    """归一化正文行/句：抹平课名、课号、路径与数字，用于 v2.2 凑数查重。"""
+    s = line.strip()
+    if not s:
+        return ""
+    s = re.sub(r"「[^」]*」", "「§TITLE」", s)
+    s = re.sub(r"\b\d{1,2}\.\d{1,2}\b", "§N", s)
+    s = re.sub(r"·\d+", "·§N", s)
+    s = re.sub(r"docs/[^\s）」]*", "docs/§PATH", s)
+    s = re.sub(r"examples/[^\s）」]*", "examples/§PATH", s)
+    s = re.sub(r"[^\s）」]+\.(?:md|py)\b", "§FILE", s)
+    s = re.sub(r"\d+", "§N", s)
+    return s.strip()
+
+
+def _split_v22_sentences(line: str) -> list[str]:
+    parts = re.split(r"(?<=[。！？])", line)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _normalize_code_block(content: str) -> str:
+    out: list[str] = []
+    for raw in content.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if line:
+            out.append(line)
+    return "".join(out)
+
+
+def check_v22_filler_markers(course_files: list[Path], report: Report) -> None:
+    v21 = [p for p in course_files if (_lesson_stage(p) or 0) >= V21_STAGE_MIN]
+    hits: list[str] = []
+    for marker, label in V22_FILLER_MARKERS:
+        n = sum(marker in p.read_text(encoding="utf-8") for p in v21)
+        if n:
+            hits.append(f"{label}（{marker!r}）出现 {n} 处")
+    if hits:
+        report.fail("v2.2 凑数标记未清零：" + "；".join(hits))
+    else:
+        report.ok("v22_filler", "v2.2 凑数标记清零")
+
+
+def check_v22_duplicate_text(course_files: list[Path], report: Report) -> None:
+    v21 = [p for p in course_files if (_lesson_stage(p) or 0) >= V21_STAGE_MIN]
+    cross_line: dict[str, set[Path]] = {}
+    cross_sent: dict[str, set[Path]] = {}
+    in_lesson_line: list[tuple[Path, str, int]] = []
+    in_lesson_sent: list[tuple[Path, str, int]] = []
+
+    for p in v21:
+        line_counts: dict[str, int] = {}
+        sent_counts: dict[str, int] = {}
+        for raw in _collect_v21_lines(p):
+            norm = normalize_v22_text(raw)
+            if len(norm) < 12:
+                continue
+            line_counts[norm] = line_counts.get(norm, 0) + 1
+            cross_line.setdefault(norm, set()).add(p)
+            for sent in _split_v22_sentences(raw):
+                ns = normalize_v22_text(sent)
+                if len(ns) < 12:
+                    continue
+                sent_counts[ns] = sent_counts.get(ns, 0) + 1
+                cross_sent.setdefault(ns, set()).add(p)
+        for norm, c in line_counts.items():
+            if c > V22_DUP_IN_LESSON_MAX:
+                in_lesson_line.append((p, norm, c))
+        for norm, c in sent_counts.items():
+            if c > V22_DUP_IN_LESSON_MAX:
+                in_lesson_sent.append((p, norm, c))
+
+    cross_off = [(n, len(ps)) for n, ps in cross_line.items() if len(ps) > V21_DUP_LINE_MAX]
+    sent_off = [(n, len(ps)) for n, ps in cross_sent.items() if len(ps) > V21_DUP_LINE_MAX]
+    failures: list[str] = []
+    if cross_off:
+        cross_off.sort(key=lambda x: -x[1])
+        sample = "; ".join(f"×{n}课" for _, n in cross_off[:3])
+        failures.append(f"跨课重复归一化行 {len(cross_off)} 条（>{V21_DUP_LINE_MAX} 课），{sample}")
+    if sent_off:
+        sent_off.sort(key=lambda x: -x[1])
+        failures.append(f"跨课重复归一化句 {len(sent_off)} 条（>{V21_DUP_LINE_MAX} 课）")
+    if in_lesson_line:
+        failures.append(f"课内重复归一化行 {len(in_lesson_line)} 处（>{V22_DUP_IN_LESSON_MAX} 次/课）")
+    if in_lesson_sent:
+        failures.append(f"课内重复归一化句 {len(in_lesson_sent)} 处（>{V22_DUP_IN_LESSON_MAX} 次/课）")
+    if failures:
+        report.fail("v2.2 正文查重：" + "；".join(failures))
+    else:
+        report.ok("v22_dup", "v2.2 正文查重")
+
+
+def check_v22_duplicate_code_blocks(blocks: list[Block], report: Report) -> None:
+    indexed: list[tuple[str, Path, int]] = []
+    for b in blocks:
+        stage = _lesson_stage(b.file)
+        if stage is None or stage < V21_STAGE_MIN:
+            continue
+        if b.lang != "python":
+            continue
+        if "run" not in b.flags and "exercise" not in b.flags and "local" not in b.flags:
+            continue
+        norm = _normalize_code_block(b.content)
+        if len(norm) < 24:
+            continue
+        indexed.append((norm, b.file, b.line))
+    by_hash: dict[str, list[tuple[Path, int]]] = {}
+    for norm, path, line in indexed:
+        by_hash.setdefault(norm, []).append((path, line))
+    dup_groups = [loc for loc in by_hash.values() if len({p for p, _ in loc}) >= 2]
+    if dup_groups:
+        sample = dup_groups[0]
+        a, b = sample[0], sample[1] if len(sample) > 1 else sample[0]
+        report.fail(
+            f"v2.2 代码块查重：{len(dup_groups)} 组完全相同（去空白注释后），"
+            f"例 {rel(a[0])}:{a[1]} 与 {rel(b[0])}:{b[1]}"
+        )
+    else:
+        report.ok("v22_code_dup", "v2.2 代码块查重")
+
+
+def check_v22_pyodide_forbidden(blocks: list[Block], report: Report) -> None:
+    bad: list[str] = []
+    for b in blocks:
+        stage = _lesson_stage(b.file)
+        if stage is None or stage < V21_STAGE_MIN:
+            continue
+        if b.lang != "python":
+            continue
+        if "run" not in b.flags and "exercise" not in b.flags:
+            continue
+        if not PYODIDE_FORBIDDEN_IN_RUN.search(b.content):
+            continue
+        bad.append(f"{rel(b.file)}:{b.line}")
+    if bad:
+        report.fail(f"v2.2 浏览器不可运行块（run/exercise 含线程/进程/网络 API）{len(bad)} 个：{', '.join(bad[:8])}")
+    else:
+        report.ok("v22_pyodide", "v2.2 浏览器可运行块")
+
+
 def check_v21_duplicate_lines(course_files: list[Path], report: Report) -> None:
+    """保留 v2.1 原文整行查重（阈值 3 课），与 v2.2 归一化查重并存。"""
     v21 = [p for p in course_files if (_lesson_stage(p) or 0) >= V21_STAGE_MIN]
     counts: dict[str, int] = {}
     for p in v21:
@@ -406,6 +561,10 @@ def main() -> int:
         check_links(f, report, strict_domains=True)
         all_blocks += parse_blocks(f)
     check_v21_duplicate_lines(course_files, report)
+    check_v22_filler_markers(course_files, report)
+    check_v22_duplicate_text(course_files, report)
+    check_v22_duplicate_code_blocks(all_blocks, report)
+    check_v22_pyodide_forbidden(all_blocks, report)
     for f in other_docs:
         check_links(f, report, strict_domains=False)
         if f.name == "课程大纲.md":
@@ -417,7 +576,9 @@ def main() -> int:
             print("  ✓", p)
     labels = {"example": "示例运行", "exercise": "练习参考答案通过", "starter": "练习起始代码被判失败",
               "static": "静态代码语法", "source": "源码副本一致", "structure": "课程结构", "link": "链接",
-              "v21_structure": "v2.1 量化结构", "v21_dup": "v2.1 重复行"}
+              "v21_structure": "v2.1 量化结构", "v21_dup": "v2.1 重复行",
+              "v22_filler": "v2.2 凑数清零", "v22_dup": "v2.2 正文查重",
+              "v22_code_dup": "v2.2 代码块查重", "v22_pyodide": "v2.2 浏览器块"}
     print("\n通过：")
     for k, label in labels.items():
         if report.counts.get(k):
