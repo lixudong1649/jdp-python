@@ -329,6 +329,287 @@ def check_v231_r6_unused_assignments(blocks: list[Block], report: Report) -> Non
         report.ok("v231_r6", "v2.3.1 R6 未使用赋值")
 
 
+V232_R7_MIN_PRINTS = 3
+V232_R7_LITERAL_PRINT_RATIO = 0.5
+
+
+def _fstring_is_literal(node: ast.JoinedStr) -> bool:
+    return all(isinstance(part, ast.Constant) and isinstance(part.value, str) for part in node.values)
+
+
+def _is_sys_version_attr(node: ast.AST) -> bool:
+    return (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "sys"
+        and node.attr in ("version", "version_info")
+    )
+
+
+def _is_env_probe_call(node: ast.Call) -> bool:
+    if isinstance(node.func, ast.Name) and node.func.id == "hasattr":
+        return True
+    if _is_sys_version_attr(node.func):
+        return True
+    return False
+
+
+class _LiteralSourceAnalyzer:
+    """判断表达式是否仅来自块内字面量（v2.3.2 R7）。语法错误时保守为「非字面量」。"""
+
+    def __init__(self, tree: ast.Module) -> None:
+        self._tree = tree
+        self._literal_funcs: set[str] = set()
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if self._function_returns_only_literals(node):
+                    self._literal_funcs.add(node.name)
+
+    def _function_returns_only_literals(self, fn: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+        env: dict[str, bool] = {a.arg: False for a in fn.args.posonlyargs + fn.args.args + fn.args.kwonlyargs}
+        if fn.args.vararg:
+            env[fn.args.vararg.arg] = False
+        if fn.args.kwarg:
+            env[fn.args.kwarg.arg] = False
+        return self._body_preserves_literals(fn.body, env)
+
+    def _body_preserves_literals(self, body: list[ast.stmt], env: dict[str, bool]) -> bool:
+        for stmt in body:
+            if isinstance(stmt, ast.Return):
+                if stmt.value is None:
+                    return False
+                if not self._expr_literal(stmt.value, env):
+                    return False
+            elif isinstance(stmt, ast.Assign):
+                val_lit = self._expr_literal(stmt.value, env)
+                for t in stmt.targets:
+                    self._assign_target(t, val_lit, env)
+            elif isinstance(stmt, ast.AnnAssign) and stmt.value is not None:
+                val_lit = self._expr_literal(stmt.value, env)
+                self._assign_target(stmt.target, val_lit, env)
+            elif isinstance(stmt, ast.AugAssign):
+                if not isinstance(stmt.target, ast.Name):
+                    return False
+                env[stmt.target.id] = False
+            elif isinstance(stmt, ast.If):
+                if not self._body_preserves_literals(stmt.body, env.copy()):
+                    return False
+                if not self._body_preserves_literals(stmt.orelse, env.copy()):
+                    return False
+            elif isinstance(stmt, ast.For):
+                iter_lit = self._expr_literal(stmt.iter, env)
+                loop_env = env.copy()
+                self._bind_loop_target(stmt.target, iter_lit, loop_env)
+                if not self._body_preserves_literals(stmt.body, loop_env):
+                    return False
+            elif isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+                self._maybe_literal_append(stmt.value, env)
+            elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Try, ast.With)):
+                return False
+        return True
+
+    def _name_from_target(self, target: ast.AST) -> str:
+        if isinstance(target, ast.Name):
+            return target.id
+        raise ValueError("complex target")
+
+    def _assign_target(self, target: ast.AST, literal: bool, env: dict[str, bool]) -> None:
+        if isinstance(target, ast.Name):
+            env[target.id] = literal
+        elif isinstance(target, (ast.Tuple, ast.List)):
+            for elt in target.elts:
+                self._assign_target(elt, literal, env)
+
+    def _bind_loop_target(self, target: ast.AST, iter_literal: bool, env: dict[str, bool]) -> None:
+        if not iter_literal:
+            return
+        if isinstance(target, ast.Name):
+            env[target.id] = True
+        elif isinstance(target, ast.Tuple):
+            for elt in target.elts:
+                self._bind_loop_target(elt, True, env)
+
+    def _maybe_literal_append(self, call: ast.Call, env: dict[str, bool]) -> None:
+        if not isinstance(call.func, ast.Attribute) or call.func.attr != "append":
+            return
+        if not isinstance(call.func.value, ast.Name):
+            return
+        name = call.func.value.id
+        if not env.get(name):
+            return
+        if len(call.args) != 1 or call.keywords:
+            env[name] = False
+            return
+        if not self._expr_literal(call.args[0], env):
+            env[name] = False
+
+    def _expr_literal(self, node: ast.AST | None, env: dict[str, bool]) -> bool:
+        if node is None:
+            return False
+        if isinstance(node, ast.Constant):
+            return True
+        if isinstance(node, ast.JoinedStr):
+            return _fstring_is_literal(node)
+        if isinstance(node, ast.Name):
+            return env.get(node.id, False)
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            return self._expr_literal(node.operand, env)
+        if isinstance(node, ast.IfExp):
+            return self._expr_literal(node.body, env) and self._expr_literal(node.orelse, env)
+        if isinstance(node, ast.List):
+            return all(self._expr_literal(e, env) for e in node.elts)
+        if isinstance(node, ast.Tuple):
+            return all(self._expr_literal(e, env) for e in node.elts)
+        if isinstance(node, ast.Set):
+            return all(self._expr_literal(e, env) for e in node.elts)
+        if isinstance(node, ast.Dict):
+            return all(
+                (k is None or self._expr_literal(k, env)) and self._expr_literal(v, env)
+                for k, v in zip(node.keys, node.values)
+            )
+        if isinstance(node, ast.Subscript):
+            return self._expr_literal(node.value, env) and self._expr_literal(node.slice, env)
+        if isinstance(node, ast.Attribute):
+            base_lit = self._expr_literal(node.value, env)
+            if base_lit and node.attr in ("items", "keys", "values"):
+                return True
+            return False
+        if isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
+            return self._comp_literal(node, env)
+        if isinstance(node, ast.DictComp):
+            return self._dict_comp_literal(node, env)
+        if isinstance(node, ast.Call):
+            if _is_env_probe_call(node):
+                return True
+            if isinstance(node.func, ast.Name) and node.func.id in self._literal_funcs:
+                return all(self._expr_literal(a, env) for a in node.args) and all(
+                    self._expr_literal(kw.value, env) for kw in node.keywords
+                )
+            return False
+        return False
+
+    def _comp_literal(self, node: ast.ListComp | ast.SetComp | ast.GeneratorExp, env: dict[str, bool]) -> bool:
+        loop_env = env.copy()
+        for gen in node.generators:
+            if not self._expr_literal(gen.iter, loop_env):
+                return False
+            self._bind_comp_targets(gen.target, loop_env)
+            for if_clause in gen.ifs:
+                # 过滤条件允许任意表达式，不改变「元素为字面量」的判定
+                pass
+        return self._expr_literal(node.elt, loop_env)
+
+    def _dict_comp_literal(self, node: ast.DictComp, env: dict[str, bool]) -> bool:
+        loop_env = env.copy()
+        for gen in node.generators:
+            if not self._expr_literal(gen.iter, loop_env):
+                return False
+            self._bind_comp_targets(gen.target, loop_env)
+        return self._expr_literal(node.key, loop_env) and self._expr_literal(node.value, loop_env)
+
+    def _bind_comp_targets(self, target: ast.AST, env: dict[str, bool]) -> None:
+        if isinstance(target, ast.Name):
+            env[target.id] = True
+        elif isinstance(target, ast.Tuple):
+            for elt in target.elts:
+                self._bind_comp_targets(elt, env)
+
+    def _print_is_prewritten(self, node: ast.Call, env: dict[str, bool]) -> bool:
+        args = list(node.args)
+        for kw in node.keywords:
+            if kw.arg is None:
+                return False
+            args.append(kw.value)
+        if not args:
+            return True
+        return all(self._expr_literal(a, env) for a in args)
+
+    def count_prewritten_prints(self) -> tuple[int, int]:
+        """返回 (print 调用数, 预写文字 print 数)。"""
+        self._counters = [0, 0]
+        env: dict[str, bool] = {}
+        self._walk_stmts(self._tree.body, env)
+        return self._counters[0], self._counters[1]
+
+    def _walk_stmts(self, body: list[ast.stmt], env: dict[str, bool]) -> None:
+        for stmt in body:
+            self._walk_stmt(stmt, env)
+
+    def _walk_stmt(self, stmt: ast.stmt, env: dict[str, bool]) -> None:
+        if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+            call = stmt.value
+            if isinstance(call.func, ast.Name) and call.func.id == "print":
+                self._counters[0] += 1
+                if self._print_is_prewritten(call, env):
+                    self._counters[1] += 1
+            else:
+                self._maybe_literal_append(call, env)
+        elif isinstance(stmt, ast.Assign):
+            val_lit = self._expr_literal(stmt.value, env)
+            for t in stmt.targets:
+                self._assign_target(t, val_lit, env)
+        elif isinstance(stmt, ast.AnnAssign) and stmt.value is not None:
+            val_lit = self._expr_literal(stmt.value, env)
+            self._assign_target(stmt.target, val_lit, env)
+        elif isinstance(stmt, ast.AugAssign):
+            if isinstance(stmt.target, ast.Name):
+                env[stmt.target.id] = False
+        elif isinstance(stmt, ast.For):
+            iter_lit = self._expr_literal(stmt.iter, env)
+            loop_env = env.copy()
+            self._bind_loop_target(stmt.target, iter_lit, loop_env)
+            self._walk_stmts(stmt.body, loop_env)
+        elif isinstance(stmt, ast.If):
+            then_env = env.copy()
+            self._walk_stmts(stmt.body, then_env)
+            else_env = env.copy()
+            self._walk_stmts(stmt.orelse, else_env)
+        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            pass
+        elif isinstance(stmt, ast.With):
+            self._walk_stmts(stmt.body, env)
+
+
+def prewritten_print_counts(content: str) -> tuple[int, int]:
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return 0, 0
+    return _LiteralSourceAnalyzer(tree).count_prewritten_prints()
+
+
+def run_block_fails_v232_r7(content: str) -> bool:
+    total, literal = prewritten_print_counts(content)
+    if total < V232_R7_MIN_PRINTS:
+        return False
+    return literal / total >= V232_R7_LITERAL_PRINT_RATIO
+
+
+def check_v232_r7_prewritten_prints(blocks: list[Block], report: Report) -> None:
+    """v2.3.2 R7：阶段 12–24 的 python run 块不得主要在打印预写文字。"""
+    failures: list[str] = []
+    for b in blocks:
+        stage = _lesson_stage(b.file)
+        if stage is None or stage < V21_STAGE_MIN:
+            continue
+        if b.lang != "python" or "run" not in b.flags:
+            continue
+        total, literal = prewritten_print_counts(b.content)
+        if total < V232_R7_MIN_PRINTS:
+            continue
+        if literal / total >= V232_R7_LITERAL_PRINT_RATIO:
+            where = f"{rel(b.file)}:{b.line}"
+            failures.append(
+                f"v2.3.2 R7 {where} print {total} 个中有 {literal} 个为预写文字 "
+                f"({literal / total:.0%} >= {V232_R7_LITERAL_PRINT_RATIO:.0%})"
+            )
+    if failures:
+        for msg in failures:
+            report.fail(msg)
+    else:
+        report.ok("v232_r7", "v2.3.2 R7 预写文字打印")
+
+
 def _lesson_stage(path: Path) -> int | None:
     if path.parent.parent != COURSE:
         return None
@@ -761,6 +1042,7 @@ def main() -> int:
     check_v22_pyodide_forbidden(all_blocks, report)
     check_v23_weak_run_blocks(all_blocks, report)
     check_v231_r6_unused_assignments(all_blocks, report)
+    check_v232_r7_prewritten_prints(all_blocks, report)
     for f in other_docs:
         check_links(f, report, strict_domains=False)
         if f.name == "课程大纲.md":
@@ -778,7 +1060,8 @@ def main() -> int:
               "v21_structure": "v2.1 量化结构", "v21_dup": "v2.1 重复行",
               "v22_filler": "v2.2 凑数清零", "v22_dup": "v2.2 正文查重",
               "v22_code_dup": "v2.2 代码块查重", "v22_pyodide": "v2.2 浏览器块",
-              "v23_run_quality": "v2.3 弱示例门禁", "v231_r6": "v2.3.1 R6 未使用赋值"}
+              "v23_run_quality": "v2.3 弱示例门禁", "v231_r6": "v2.3.1 R6 未使用赋值",
+              "v232_r7": "v2.3.2 R7 预写文字打印"}
     print("\n通过：")
     for k, label in labels.items():
         if report.counts.get(k):
