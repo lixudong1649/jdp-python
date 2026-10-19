@@ -36,17 +36,20 @@ print(back == text)
 需要原地改几个字节时用 `bytearray`；算哈希、作为 dict 键时仍要 `bytes`。
 
 ```python run
-header = b"GET "
 payload = bytearray(b"index.html")
 payload[0:4] = b"home"
-print("mutable payload", bytes(payload))
+mutable_view = bytes(payload)
 frozen = bytes(payload)
-print("immutable copy", frozen)
-print("same bytes?", frozen == bytes(payload))
-print("bytearray id changes", id(payload) != id(frozen))
+print("after slice replace", mutable_view)
+print("bytes copy matches buffer", frozen == mutable_view)
+print("bytearray still mutable", payload[0:4] == b"home")
+payload.extend(b"?v=2")
+print("extended buffer", bytes(payload))
+print("frozen snapshot unchanged", frozen == b"home.html")
+print("snapshot len vs live", len(frozen), len(payload))
 ```
 
-`bytearray` 可以原地改字节，再 `bytes(...)` 得到不可变副本；协议里常先改缓冲区，再交给只接受 `bytes` 的 API。上面输出对比了可变缓冲与 `bytes` 副本是否相同、以及二者是否为同一对象。
+`bytearray` 可以原地改字节，再 `bytes(...)` 得到不可变副本；协议里常先改缓冲区，再交给只接受 `bytes` 的 API。上面先切片替换再 `extend`，`frozen` 仍是替换后、扩展前的快照，说明 `bytes(...)` 拷贝的是某一时刻的内容，而不是绑定到后续修改。
 网络协议里常见“长度前缀 + 载荷”：载荷部分是 bytes，头部字段解析完再 `.decode("ascii")` 成 str。
 
 ### 编码名称与 BOM
@@ -73,23 +76,31 @@ print("BOM stripped?", plain[0] != "\ufeff")
 ```python run raises=UnicodeDecodeError
 chunk = b"LOG\xff\xfeWARN"
 print("raw hex tail", chunk[-4:].hex())
-print("attempt utf-8 decode on", len(chunk), "bytes")
-bad = chunk
-bad.decode("utf-8")
+print("total bytes", len(chunk))
+prefix = chunk[:3]
+ascii_ok = prefix.decode("ascii")
+print("ascii prefix", ascii_ok)
+tail = chunk[3:]
+print("tail byte values", list(tail))
+print("about to decode tail as utf-8")
+tail.decode("utf-8")
 ```
 
-这段模拟从旧系统读到的日志尾部混入非法 UTF-8 字节：先打印原始十六进制与长度，再按默认 `utf-8` 解码就会抛 `UnicodeDecodeError`，说明不能假设所有字节都是合法 UTF-8。
+这段模拟从旧系统读到的日志尾部混入非法 UTF-8 字节：ASCII 前缀能正常解码，但从 `0xff` 起的尾部按默认 `utf-8` 会抛 `UnicodeDecodeError`，说明不能假设整段 `bytes` 都是合法 UTF-8。
 
 ```python run
 bad = b"ok\xfftail"
 as_replace = bad.decode("utf-8", errors="replace")
+as_ignore = bad.decode("utf-8", errors="ignore")
 as_latin1 = bad.decode("latin-1")
 print("replace", repr(as_replace), "len", len(as_replace))
+print("ignore", repr(as_ignore), "len", len(as_ignore))
 print("latin-1 tail char", repr(as_latin1[-1]), "codepoint", ord(as_latin1[-1]))
-print("same length as bytes?", len(as_latin1) == len(bad))
+print("latin-1 len equals bytes", len(as_latin1) == len(bad))
+print("replace contains U+FFFD", "\ufffd" in as_replace)
 ```
 
-`errors="replace"` 把非法字节变成 U+FFFD，文本变长但可读；`latin-1` 一字节一码点，长度与原始 `bytes` 相同，适合当“透明隧道”查看脏数据。
+`errors="replace"` 把非法字节变成 U+FFFD，文本变长但可读；`ignore` 会删掉坏字节所以更短；`latin-1` 一字节一码点，长度与原始 `bytes` 相同，适合当“透明隧道”查看脏数据。
 
 ### 与文件 I/O 的关系
 
@@ -112,18 +123,20 @@ print(p.read_bytes()[:10])
 课程仓库 `.python-version` 固定 **3.12**；`str` / `bytes` 语义在 3.12–3.15 一致。Windows 记事本“UTF-8”与 Python `utf-8` 通常兼容；若文件来自旧系统，先用十六进制查看器确认是否有 BOM 或混合编码，再决定 `encoding` 或 `errors=`。
 
 ```python run
-import sys
-
-vi = sys.version_info
-print("interpreter", vi.major, vi.minor, vi.micro)
-print("default encoding", sys.getdefaultencoding())
-print("filesystem encoding", sys.getfilesystemencoding())
-sample = "日志".encode("utf-8")
-print("utf-8 bytes for 日志", len(sample), sample[:6])
-print("decode roundtrip ok", sample.decode("utf-8") == "日志")
+text = "上海"
+utf8 = text.encode("utf-8")
+gbk = text.encode("gbk")
+utf16 = text.encode("utf-16")
+print("utf-8 bytes", len(utf8), utf8)
+print("gbk bytes", len(gbk), gbk)
+print("utf-16 bytes", len(utf16), "bom", utf16[:2])
+wrong = gbk.decode("utf-8", errors="replace")
+print("gbk interpreted as utf-8", repr(wrong))
+roundtrip = utf8.decode("utf-8")
+print("utf-8 roundtrip ok", roundtrip == text)
 ```
 
-解释器默认编码与文件系统编码在 3.12 上通常仍是 `utf-8`，但**读写文件仍应显式写 `encoding=`**，不要依赖这里打印的值在别的机器上一致。
+同一串汉字在 UTF-8、GBK、UTF-16 下字节长度与内容都不同；把 GBK 字节硬当 UTF-8 解码会得到替换符或乱码。读写文件时必须显式 `encoding=`，不能凭「默认是 utf-8」猜磁盘上的字节。
 
 ## 易错点
 
@@ -141,19 +154,27 @@ for msg in messages:
     back = raw.decode("utf-8")
     same = back == msg
     print(msg, "chars", len(msg), "bytes", len(raw), "roundtrip", same)
-print("all ok", all(m.encode("utf-8").decode("utf-8") == m for m in messages))
+all_ok = all(m.encode("utf-8").decode("utf-8") == m for m in messages)
+widest = max(len(m.encode("utf-8")) for m in messages)
+print("all roundtrips ok", all_ok)
+print("widest utf-8 span", widest, "bytes")
 ```
 
-往返编码应逐个字符长度与字节长度不同（中文、emoji 占多字节），但解码后必须与原文相等；这是 `logstats` 假设日志为 UTF-8 文本的前提。
+往返编码应逐个字符长度与字节长度不同（中文、emoji 占多字节），但解码后必须与原文相等；`widest` 指出单条消息最多占多少 UTF-8 字节，这是 `logstats` 假设日志为 UTF-8 文本时的典型跨度。
 
 ```python run raises=TypeError
 user = "a"
 packet = b"b"
 print("types", type(user).__name__, type(packet).__name__)
-combined = user + packet
+print("need explicit encode before concat")
+left_repr = repr(user)
+right_repr = repr(packet)
+print("attempt", left_repr, "+", right_repr)
+print("will raise on next line")
+user + packet
 ```
 
-拼接前先打印两侧类型：一边是 `str` 一边是 `bytes`，Python 拒绝隐式转换，因此 `TypeError` 提醒你在边界上显式 `.encode()` 或 `.decode()`。
+拼接前先打印两侧类型：一边是 `str` 一边是 `bytes`，最后一行的 `+` 会触发 `TypeError`，提醒你在网络/文件边界上显式 `.encode()` 或 `.decode()`，不要指望隐式转换。
 
 ## 对照
 

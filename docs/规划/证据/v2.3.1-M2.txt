@@ -1,0 +1,69 @@
+命令: uv run python tests/check_course.py -k 14-
+      uv run pytest -q
+      npm --prefix site run verify:pyodide -- 14-
+开始时间: 2026-10-19 09:56:25 +0800
+---
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 5 个，其他文档 0 个
+
+通过：
+  示例运行: 27
+  练习参考答案通过（浏览器）: 10
+  练习起始代码被判失败: 10
+  静态代码语法: 8
+  课程结构: 4
+  链接: 22
+  v2.1 量化结构: 4
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  v2.3.1 R6 未使用赋值: 1
+  练习参考答案通过合计: 10（浏览器 10 + 本地 0）
+  （唯一示例 27 个，唯一练习 10 道，解释器 1 个）
+
+全部通过 ✅
+=== pytest ===
+..........................................................F...      [100%]
+=================================== FAILURES ===================================
+__ V231RegressionLinesTest.test_target_run_blocks_have_eight_effective_lines ___
+
+self = <test_check_course_v231.V231RegressionLinesTest testMethod=test_target_run_blocks_have_eight_effective_lines>
+
+    def test_target_run_blocks_have_eight_effective_lines(self):
+        short: list[str] = []
+        for rel_path, index in V231_RUN_BLOCK_SPECS:
+            block = nth_python_run_block(ROOT / rel_path, index)
+            n = len(_effective_code_lines(block.content))
+            if n < V231_MIN_REGRESSION_EFFECTIVE:
+                short.append(f"{rel_path} run#{index} @ {block.line}: {n} 行")
+>       self.assertEqual(
+            short,
+            [],
+            "以下块有效代码不足 8 行：\n" + "\n".join(short),
+        )
+E       AssertionError: Lists differ: ['docs/课程/17-打包与发布/01-wheel与构建后端.md run#4 @ 126: 6 行'] != []
+E       
+E       First list contains 1 additional elements.
+E       First extra element 0:
+E       'docs/课程/17-打包与发布/01-wheel与构建后端.md run#4 @ 126: 6 行'
+E       
+E       - ['docs/课程/17-打包与发布/01-wheel与构建后端.md run#4 @ 126: 6 行']
+E       + [] : 以下块有效代码不足 8 行：
+E       docs/课程/17-打包与发布/01-wheel与构建后端.md run#4 @ 126: 6 行
+
+tests/test_check_course_v231.py:35: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_check_course_v231.py::V231RegressionLinesTest::test_target_run_blocks_have_eight_effective_lines
+1 failed, 61 passed, 5 subtests passed in 0.44s
+=== verify:pyodide 14- ===
+
+> verify:pyodide
+> node scripts/verify-pyodide.mjs 14-
+
+Pyodide 内 Python 3.14.2；扫描 5 个文件；跳过 local 0 块
+示例通过 27，参考答案通过 10，起始代码被判失败 10
+全部通过 ✅

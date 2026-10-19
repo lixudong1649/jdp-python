@@ -13,12 +13,14 @@ from check_course import (
 
 
 class V231R6Test(unittest.TestCase):
-    def test_detects_header_in_14_1_run_block_2(self):
-        block = nth_python_run_block(
-            ROOT / "docs/课程/14-文本文件与命令行/01-编码与bytes.md",
-            2,
+    def test_detects_header_like_14_1_run_block_2_before_fix(self):
+        # M1 时 14.1 第 2 个 run 块含未读的 header；用同结构片段回归 R6 逻辑
+        code = (
+            'header = b"GET "\n'
+            "payload = bytearray(b'index.html')\n"
+            "print(bytes(payload))\n"
         )
-        names = [n for n, _ in unused_assigned_variables(block.content)]
+        names = [n for n, _ in unused_assigned_variables(code)]
         self.assertIn("header", names)
 
 
