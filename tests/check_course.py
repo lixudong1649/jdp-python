@@ -146,10 +146,7 @@ def check_blocks(blocks: list[Block], pythons: list[str], report: Report, seen_i
         where = f"{rel(b.file)}:{b.line}"
         if b.lang != "python":
             continue
-        if "run" in b.flags or "local" in b.flags:
-            for py in pythons:
-                jobs.append((where, ("raises", b.attrs["raises"]) if "raises" in b.attrs else ("ok", None), py, b.content, "", "example"))
-        elif "exercise" in b.flags:
+        if "exercise" in b.flags:
             ex_id = b.attrs.get("id")
             if not ex_id:
                 report.fail(f"{where} 练习缺少 id=")
@@ -162,9 +159,13 @@ def check_blocks(blocks: list[Block], pythons: list[str], report: Report, seen_i
             if missing:
                 report.fail(f"{where} 练习 {ex_id} 缺少段落：{missing}")
                 continue
+            sol_kind = "local_exercise" if "local" in b.flags else "exercise"
             for py in pythons:
-                jobs.append((f"{where} [{ex_id}] solution", ("ok", None), py, ex["solution"], ex["check"], "exercise"))
+                jobs.append((f"{where} [{ex_id}] solution", ("ok", None), py, ex["solution"], ex["check"], sol_kind))
                 jobs.append((f"{where} [{ex_id}] starter", ("fail", None), py, ex["starter"], ex["check"], "starter"))
+        elif "run" in b.flags or "local" in b.flags:
+            for py in pythons:
+                jobs.append((where, ("raises", b.attrs["raises"]) if "raises" in b.attrs else ("ok", None), py, b.content, "", "example"))
         elif "source" in b.attrs:
             target = ROOT / b.attrs["source"]
             if not target.exists():
@@ -219,9 +220,11 @@ V22_FILLER_MARKERS = (
 )
 PYODIDE_FORBIDDEN_IN_RUN = re.compile(
     r"\b(threading|multiprocessing|subprocess|socket)\b|"
-    r"ThreadPoolExecutor|ProcessPoolExecutor",
+    r"ThreadPoolExecutor|ProcessPoolExecutor|\bas_completed\b",
     re.I,
 )
+_CF_IMPORT_RE = re.compile(r"from\s+concurrent\.futures\s+import\s+([^\n#]+)", re.I)
+_CF_IMPORT_ALLOWED = frozenset({"Future", "CancelledError", "TimeoutError"})
 
 
 def _lesson_stage(path: Path) -> int | None:
@@ -292,7 +295,7 @@ def check_v21_lesson(path: Path, report: Report) -> None:
     n_run = len(re.findall(r"^```python run(?:\s|$)", text, re.M))
     if n_run < V21_MIN_RUN_BLOCKS:
         report.fail(f"{where} v2.1 可运行示例 {n_run} < {V21_MIN_RUN_BLOCKS}")
-    n_ex = len(re.findall(r"^```python (?:local )?exercise", text, re.M))
+    n_ex = len(re.findall(r"^```python exercise", text, re.M))
     if n_ex < V21_MIN_EXERCISE_BLOCKS:
         report.fail(f"{where} v2.1 练习 {n_ex} < {V21_MIN_EXERCISE_BLOCKS}")
     for ph in V21_FORBIDDEN_PLACEHOLDERS:
@@ -338,6 +341,22 @@ def _normalize_code_block(content: str) -> str:
 
 def _code_for_forbidden_scan(content: str) -> str:
     return "\n".join(raw.split("#", 1)[0] for raw in content.splitlines())
+
+
+def pyodide_forbidden_in_block(content: str) -> bool:
+    """浏览器 run/exercise 禁止线程/进程/网络 API；concurrent.futures 仅放行 Future 等句柄类型。"""
+    scan = _code_for_forbidden_scan(content)
+    if PYODIDE_FORBIDDEN_IN_RUN.search(scan):
+        return True
+    if re.search(r"\bimport\s+concurrent\.futures\b", scan):
+        return True
+    for m in _CF_IMPORT_RE.finditer(scan):
+        names = re.sub(r"\([^)]*\)", "", m.group(1))
+        for part in names.split(","):
+            name = part.strip().split(" as ", 1)[0].strip()
+            if name and name not in _CF_IMPORT_ALLOWED:
+                return True
+    return False
 
 
 def check_v22_filler_markers(course_files: list[Path], report: Report) -> None:
@@ -443,7 +462,7 @@ def check_v22_pyodide_forbidden(blocks: list[Block], report: Report) -> None:
             continue
         if "run" not in b.flags and "exercise" not in b.flags:
             continue
-        if not PYODIDE_FORBIDDEN_IN_RUN.search(_code_for_forbidden_scan(b.content)):
+        if not pyodide_forbidden_in_block(b.content):
             continue
         bad.append(f"{rel(b.file)}:{b.line}")
     if bad:
@@ -581,7 +600,10 @@ def main() -> int:
     if args.verbose:
         for p in report.passed:
             print("  ✓", p)
-    labels = {"example": "示例运行", "exercise": "练习参考答案通过", "starter": "练习起始代码被判失败",
+    n_browser_ex = report.counts.get("exercise", 0)
+    n_local_ex = report.counts.get("local_exercise", 0)
+    labels = {"example": "示例运行", "exercise": "练习参考答案通过（浏览器）", "local_exercise": "练习参考答案通过（本地）",
+              "starter": "练习起始代码被判失败",
               "static": "静态代码语法", "source": "源码副本一致", "structure": "课程结构", "link": "链接",
               "v21_structure": "v2.1 量化结构", "v21_dup": "v2.1 重复行",
               "v22_filler": "v2.2 凑数清零", "v22_dup": "v2.2 正文查重",
@@ -590,6 +612,8 @@ def main() -> int:
     for k, label in labels.items():
         if report.counts.get(k):
             print(f"  {label}: {report.counts[k]}")
+    if n_browser_ex or n_local_ex:
+        print(f"  练习参考答案通过合计: {n_browser_ex + n_local_ex}（浏览器 {n_browser_ex} + 本地 {n_local_ex}）")
     n_ex = sum(1 for b in all_blocks if b.lang == "python" and "run" in b.flags)
     print(f"  （唯一示例 {n_ex} 个，唯一练习 {len(seen_ids)} 道，解释器 {len(pythons)} 个）")
     if report.failed:
