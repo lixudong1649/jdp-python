@@ -222,7 +222,94 @@ cd examples/项目/18-并发下载模拟 && uv run pytest -q
 
 ## 练习
 
-### 练习 1：非阻塞尝试加锁
+### 练习 1：生成器模拟交替执行
+
+实现 `alternate_tags(n_a: int, n_b: int)`：生成器交替产出字符串 `"A"` 与 `"B"`，先 `A` 后 `B`，共 `n_a + n_b` 次；某一侧配额用尽后只产出另一侧剩余次数（模拟两个线程在 GIL 下轮流拿到执行机会）。
+
+```python exercise id=s18-l01-alt
+# --- starter ---
+def alternate_tags(n_a: int, n_b: int):
+    yield "A"
+# --- solution ---
+def alternate_tags(n_a: int, n_b: int):
+    left_a, left_b = n_a, n_b
+    turn_a = True
+    while left_a or left_b:
+        if turn_a and left_a:
+            yield "A"
+            left_a -= 1
+        elif not turn_a and left_b:
+            yield "B"
+            left_b -= 1
+        elif left_a:
+            yield "A"
+            left_a -= 1
+        elif left_b:
+            yield "B"
+            left_b -= 1
+        turn_a = not turn_a
+# --- check ---
+assert list(alternate_tags(2, 2)) == ["A", "B", "A", "B"]
+assert list(alternate_tags(3, 1)) == ["A", "B", "A", "A"]
+```
+
+### 练习 2：假锁保护临界区
+
+实现 `MonoLock`：同一时刻只允许一个持有者。`acquire()` 成功返回 `True` 并记录持有；若已持有返回 `False`。`release()` 在无持有者时抛出 `RuntimeError`；否则释放。用 `with lock:` 时依赖上下文管理器（课内已实现 `__enter__`/`__exit__` 调用 acquire/release）。
+
+```python exercise id=s18-l01-monolock
+# --- starter ---
+class MonoLock:
+    def __init__(self) -> None:
+        self._owner: str | None = None
+
+    def acquire(self, owner: str) -> bool:
+        return False
+
+    def release(self) -> None:
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        return False
+# --- solution ---
+class MonoLock:
+    def __init__(self) -> None:
+        self._owner: str | None = None
+
+    def acquire(self, owner: str) -> bool:
+        if self._owner is not None:
+            return False
+        self._owner = owner
+        return True
+
+    def release(self) -> None:
+        if self._owner is None:
+            raise RuntimeError("release unlocked")
+        self._owner = None
+
+    def __enter__(self):
+        if not self.acquire("with"):
+            raise RuntimeError("lock busy")
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        self.release()
+        return False
+# --- check ---
+lk = MonoLock()
+assert lk.acquire("t1") is True
+assert lk.acquire("t2") is False
+lk.release()
+counter = {"n": 0}
+with lk:
+    counter["n"] += 1
+assert counter["n"] == 1
+```
+
+### 练习 3：非阻塞尝试加锁
 
 实现 `try_increment(counter, lock)`：若 `lock.acquire(blocking=False)` 成功则 `counter["v"] += 1` 并释放锁，返回是否成功；否则返回 `False`。
 
@@ -253,7 +340,7 @@ assert try_increment(c, lk) is False
 lk.release()
 ```
 
-### 练习 2：带锁的批量自增
+### 练习 4：带锁的批量自增
 
 实现 `bump_many(counter, lock, times)`：在持锁期间循环 `times` 次，每次 `counter["total"] += 1`；返回最终 `total`。
 
