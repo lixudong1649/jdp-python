@@ -207,7 +207,7 @@ assert supports_modern_concurrency(3, 11) is False
 import sys
 
 def gil_probe_label() -> str:
-    return "enabled"
+    return "maybe"
 # --- solution ---
 import sys
 
