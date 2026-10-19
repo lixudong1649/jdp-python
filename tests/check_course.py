@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import difflib
 import json
 import re
@@ -236,6 +237,96 @@ _V23_TAUTOLOGY_RE = re.compile(
     r"\bor\s+True\b|assert\s+True\b",
     re.I,
 )
+
+V231_MIN_REGRESSION_EFFECTIVE = 8
+
+# v2.3.1 回归：课文件（相对仓库根）与第几个 python run 块（从 1 起）
+V231_RUN_BLOCK_SPECS: list[tuple[str, int]] = [
+    ("docs/课程/14-文本文件与命令行/01-编码与bytes.md", 4),
+    ("docs/课程/14-文本文件与命令行/01-编码与bytes.md", 5),
+    ("docs/课程/14-文本文件与命令行/01-编码与bytes.md", 8),
+    ("docs/课程/14-文本文件与命令行/01-编码与bytes.md", 9),
+    ("docs/课程/14-文本文件与命令行/02-re正则.md", 1),
+    ("docs/课程/17-打包与发布/01-wheel与构建后端.md", 4),
+    ("docs/课程/14-文本文件与命令行/01-编码与bytes.md", 2),
+    ("docs/课程/14-文本文件与命令行/01-编码与bytes.md", 7),
+    ("docs/课程/18-并发/03-free-threaded现状.md", 1),
+    ("docs/课程/19-asyncio/02-gather与TaskGroup.md", 1),
+    ("docs/课程/19-asyncio/02-gather与TaskGroup.md", 2),
+    ("docs/课程/17-打包与发布/03-发布流程.md", 2),
+    ("docs/课程/17-打包与发布/03-发布流程.md", 4),
+]
+
+
+def _function_param_names(args: ast.arguments) -> set[str]:
+    names: set[str] = set()
+    for arg in (*args.posonlyargs, *args.args, *args.kwonlyargs):
+        names.add(arg.arg)
+    if args.vararg:
+        names.add(args.vararg.arg)
+    if args.kwarg:
+        names.add(args.kwarg.arg)
+    return names
+
+
+def _unused_assigned_in_body(body: list[ast.stmt], param_names: set[str]) -> list[tuple[str, int]]:
+    assigned: dict[str, int] = {}
+    loaded: set[str] = set()
+    nested: list[tuple[str, int]] = []
+
+    class Walker(ast.NodeVisitor):
+        def visit_Name(self, node: ast.Name) -> None:
+            if isinstance(node.ctx, ast.Store):
+                if not node.id.startswith("_") and node.id not in param_names:
+                    assigned[node.id] = node.lineno
+            elif isinstance(node.ctx, ast.Load):
+                loaded.add(node.id)
+
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+            nested.extend(_unused_assigned_in_body(node.body, _function_param_names(node.args)))
+
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+            nested.extend(_unused_assigned_in_body(node.body, _function_param_names(node.args)))
+
+    Walker().visit(ast.Module(body=body, type_ignores=[]))
+    outer = [(name, lineno) for name, lineno in assigned.items() if name not in loaded]
+    return outer + nested
+
+
+def unused_assigned_variables(content: str) -> list[tuple[str, int]]:
+    """赋值后从未读取的变量（_ 前缀与函数形参除外）。语法错误时返回空列表。"""
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return []
+    return _unused_assigned_in_body(tree.body, set())
+
+
+def nth_python_run_block(path: Path, index: int) -> Block:
+    """课内第 index 个 python run 块（从 1 起）。"""
+    runs = [b for b in parse_blocks(path) if b.lang == "python" and "run" in b.flags]
+    if index < 1 or index > len(runs):
+        raise IndexError(f"{rel(path)} 仅有 {len(runs)} 个 run 块，请求第 {index} 个")
+    return runs[index - 1]
+
+
+def check_v231_r6_unused_assignments(blocks: list[Block], report: Report) -> None:
+    """v2.3.1 R6：目标 13 个 python run 块不得有赋值后未读的变量。"""
+    failures: list[str] = []
+    for rel_path, index in V231_RUN_BLOCK_SPECS:
+        try:
+            b = nth_python_run_block(ROOT / rel_path, index)
+        except IndexError as e:
+            failures.append(f"v2.3.1 R6 {rel_path} run#{index}: {e}")
+            continue
+        where = f"{rel(b.file)}:{b.line}"
+        for name, lineno in unused_assigned_variables(b.content):
+            failures.append(f"v2.3.1 R6 {where} 变量 {name!r} 赋值后未读（约第 {lineno} 行）")
+    if failures:
+        for msg in failures:
+            report.fail(msg)
+    else:
+        report.ok("v231_r6", "v2.3.1 R6 未使用赋值")
 
 
 def _lesson_stage(path: Path) -> int | None:
@@ -669,6 +760,7 @@ def main() -> int:
     check_v22_duplicate_code_blocks(all_blocks, report)
     check_v22_pyodide_forbidden(all_blocks, report)
     check_v23_weak_run_blocks(all_blocks, report)
+    check_v231_r6_unused_assignments(all_blocks, report)
     for f in other_docs:
         check_links(f, report, strict_domains=False)
         if f.name == "课程大纲.md":
@@ -686,7 +778,7 @@ def main() -> int:
               "v21_structure": "v2.1 量化结构", "v21_dup": "v2.1 重复行",
               "v22_filler": "v2.2 凑数清零", "v22_dup": "v2.2 正文查重",
               "v22_code_dup": "v2.2 代码块查重", "v22_pyodide": "v2.2 浏览器块",
-              "v23_run_quality": "v2.3 弱示例门禁"}
+              "v23_run_quality": "v2.3 弱示例门禁", "v231_r6": "v2.3.1 R6 未使用赋值"}
     print("\n通过：")
     for k, label in labels.items():
         if report.counts.get(k):

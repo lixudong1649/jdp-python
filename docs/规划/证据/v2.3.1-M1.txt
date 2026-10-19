@@ -1,0 +1,73 @@
+命令: uv run python tests/check_course.py
+      uv run pytest -q
+开始时间: 2026-10-19 09:54:18 +0800
+---
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 107 个，其他文档 18 个
+
+通过：
+  示例运行: 401
+  练习参考答案通过（浏览器）: 172
+  练习参考答案通过（本地）: 3
+  练习起始代码被判失败: 175
+  静态代码语法: 110
+  源码副本一致: 5
+  课程结构: 81
+  链接: 812
+  v2.1 量化结构: 45
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  练习参考答案通过合计: 175（浏览器 172 + 本地 3）
+  （唯一示例 397 个，唯一练习 175 道，解释器 1 个）
+
+失败 2 项：
+  ✗ v2.3.1 R6 docs/课程/14-文本文件与命令行/01-编码与bytes.md:149 变量 'combined' 赋值后未读（约第 4 行）
+  ✗ v2.3.1 R6 docs/课程/14-文本文件与命令行/01-编码与bytes.md:38 变量 'header' 赋值后未读（约第 1 行）
+=== pytest ===
+..........................................................F...      [100%]
+=================================== FAILURES ===================================
+__ V231RegressionLinesTest.test_target_run_blocks_have_eight_effective_lines ___
+
+self = <test_check_course_v231.V231RegressionLinesTest testMethod=test_target_run_blocks_have_eight_effective_lines>
+
+    def test_target_run_blocks_have_eight_effective_lines(self):
+        short: list[str] = []
+        for rel_path, index in V231_RUN_BLOCK_SPECS:
+            block = nth_python_run_block(ROOT / rel_path, index)
+            n = len(_effective_code_lines(block.content))
+            if n < V231_MIN_REGRESSION_EFFECTIVE:
+                short.append(f"{rel_path} run#{index} @ {block.line}: {n} 行")
+>       self.assertEqual(
+            short,
+            [],
+            "以下块有效代码不足 8 行：\n" + "\n".join(short),
+        )
+E       AssertionError: Lists differ: ['docs/课程/14-文本文件与命令行/01-编码与bytes.md run#4[275 chars]6 行'] != []
+E       
+E       First list contains 6 additional elements.
+E       First extra element 0:
+E       'docs/课程/14-文本文件与命令行/01-编码与bytes.md run#4 @ 73: 5 行'
+E       
+E       + []
+E       - ['docs/课程/14-文本文件与命令行/01-编码与bytes.md run#4 @ 73: 5 行',
+E       -  'docs/课程/14-文本文件与命令行/01-编码与bytes.md run#5 @ 83: 6 行',
+E       -  'docs/课程/14-文本文件与命令行/01-编码与bytes.md run#8 @ 137: 7 行',
+E       -  'docs/课程/14-文本文件与命令行/01-编码与bytes.md run#9 @ 149: 4 行',
+E       -  'docs/课程/14-文本文件与命令行/02-re正则.md run#1 @ 22: 7 行',
+E       -  'docs/课程/17-打包与发布/01-wheel与构建后端.md run#4 @ 126: 6 行'] : 以下块有效代码不足 8 行：
+E       docs/课程/14-文本文件与命令行/01-编码与bytes.md run#4 @ 73: 5 行
+E       docs/课程/14-文本文件与命令行/01-编码与bytes.md run#5 @ 83: 6 行
+E       docs/课程/14-文本文件与命令行/01-编码与bytes.md run#8 @ 137: 7 行
+E       docs/课程/14-文本文件与命令行/01-编码与bytes.md run#9 @ 149: 4 行
+E       docs/课程/14-文本文件与命令行/02-re正则.md run#1 @ 22: 7 行
+E       docs/课程/17-打包与发布/01-wheel与构建后端.md run#4 @ 126: 6 行
+
+tests/test_check_course_v231.py:33: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_check_course_v231.py::V231RegressionLinesTest::test_target_run_blocks_have_eight_effective_lines
+1 failed, 61 passed, 5 subtests passed in 0.40s
