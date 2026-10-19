@@ -1,0 +1,62 @@
+命令: uv run python tests/check_course.py -k 16-
+命令: uv run python tests/check_course.py -k 17-
+命令: uv run pytest -q
+命令: perl -e 'alarm 300; exec @ARGV' -- npm --prefix site run verify:pyodide -- 16-
+开始时间: 2026-10-19 08:16:53 +0800
+---
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 5 个，其他文档 0 个
+
+通过：
+  示例运行: 18
+  练习参考答案通过（浏览器）: 8
+  练习起始代码被判失败: 8
+  静态代码语法: 4
+  课程结构: 4
+  链接: 31
+  v2.1 量化结构: 4
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  练习参考答案通过合计: 8（浏览器 8 + 本地 0）
+  （唯一示例 18 个，唯一练习 8 道，解释器 1 个）
+
+全部通过 ✅
+---
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 4 个，其他文档 0 个
+
+通过：
+  示例运行: 14
+  练习参考答案通过（浏览器）: 6
+  练习起始代码被判失败: 6
+  静态代码语法: 3
+  课程结构: 3
+  链接: 24
+  v2.1 量化结构: 3
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  练习参考答案通过合计: 6（浏览器 6 + 本地 0）
+  （唯一示例 14 个，唯一练习 6 道，解释器 1 个）
+
+全部通过 ✅
+--- pytest ---
+............................................................        [100%]
+60 passed, 5 subtests passed in 0.35s
+--- pyodide 16- ---
+
+> verify:pyodide
+> node scripts/verify-pyodide.mjs 16-
+
+Pyodide 内 Python 3.14.2；扫描 5 个文件；跳过 local 0 块
+示例通过 18，参考答案通过 8，起始代码被判失败 8
+全部通过 ✅

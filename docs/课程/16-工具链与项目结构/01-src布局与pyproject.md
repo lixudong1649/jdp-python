@@ -62,14 +62,22 @@ uv sync --group dev
 课内演示「组名 → 包列表」映射：
 
 ```python run
-groups = {
-    "dev": ["pytest", "ruff", "mypy"],
-    "data": ["numpy", "pandas"],
-}
-assert "pytest" in groups["dev"]
-assert "fastapi" not in groups.get("web", [])
-print(groups["dev"])
+import tomllib
+
+snippet = """
+[dependency-groups]
+dev = ["pytest", "ruff", "mypy"]
+data = ["numpy", "pandas"]
+"""
+parsed = tomllib.loads(snippet)
+groups = parsed["dependency-groups"]
+print("group names", sorted(groups))
+print("dev tools", groups["dev"])
+print("data stack", groups["data"])
+print("web group missing?", "web" not in groups)
 ```
+
+`tomllib` 把 `pyproject.toml` 里的 `[dependency-groups]` 解析成嵌套表：组名是键，列表是可选依赖包名。输出里 `dev` 与 `data` 分开，说明运行时 `[project] dependencies` 与开发/数据组可以解耦。
 
 ### src 布局 vs 平铺
 
@@ -92,10 +100,22 @@ python_files = ["test_*.py"]
 一条配置让根目录 `uv run pytest` 收集所有阶段测试与 `tests/check_course.py` 驱动的文档检查。
 
 ```python run
-config = {"testpaths": ["examples/项目", "tests"], "python_files": ["test_*.py"]}
-assert any("examples" in p for p in config["testpaths"])
-assert config["python_files"][0].startswith("test_")
+import tomllib
+
+snippet = """
+[tool.pytest.ini_options]
+testpaths = ["examples/项目", "tests"]
+python_files = ["test_*.py"]
+"""
+opts = tomllib.loads(snippet)["tool"]["pytest"]["ini_options"]
+print("collect from", opts["testpaths"])
+print("file glob", opts["python_files"])
+roots = opts["testpaths"]
+print("covers examples?", any("examples" in p for p in roots))
+print("covers tests?", any(p == "tests" for p in roots))
 ```
+
+根目录一条 `[tool.pytest.ini_options]` 让 `uv run pytest` 同时扫阶段项目与 `tests/`；解析结果打印出两个根路径与文件名模式，对应本仓「示例 + 文档检查」的收集策略。
 
 
 ## 易错点

@@ -74,10 +74,25 @@ def main():
 课内演示 pdb 命令概念（不真正交互）：
 
 ```python run
-commands = {"n": "next", "s": "step", "c": "continue", "p": "print expr"}
-assert commands["n"] == "next"
-print("pdb vocabulary ok")
+def demo(x: int) -> int:
+    y = x + 1
+    z = y * 2
+    return z
+
+trace = []
+for lineno, line in enumerate(
+    ["def demo(x):", "    y = x + 1", "    z = y * 2", "    return z"],
+    start=1,
+):
+    trace.append((lineno, line.strip()))
+commands = {"n": "next line", "s": "step into", "p variable": "print value"}
+print("would break before line", trace[2][0], trace[2][1])
+for key, meaning in commands.items():
+    print(key, "->", meaning)
+print("demo(3)", demo(3))
 ```
+
+想象在 `y = x + 1` 行停住：`n` 执行到下一行，`s` 进入调用，`p y` 查看局部变量。课内不启动真实 pdb，但打印的行号与命令表对应调试器提示符里的字母。
 
 在 pytest 里可用 `pytest --pdb` 于失败处进入调试器；日常开发更常用 IDE 断点。
 

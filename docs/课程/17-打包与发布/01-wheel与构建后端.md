@@ -20,11 +20,18 @@ title: 17.1 wheel 与构建后端
 wheel 是 zip 格式的安装包，pip/uv 解压后把文件放到 `site-packages`，无需本地编译（纯 Python 项目）。
 
 ```python run
+import re
+
 name = "logstats_pkg-0.1.0-py3-none-any.whl"
-assert name.endswith(".whl")
-assert "py3-none-any" in name
-print("wheel naming ok")
+parts = name.removesuffix(".whl").split("-")
+print("segments", parts)
+dist, version, py, abi, plat = parts[0], parts[1], parts[2], parts[3], parts[4]
+print("distribution", dist, "version", version)
+print("tags", py, abi, plat)
+print("pure python wheel?", py == "py3" and abi == "none" and plat == "any")
 ```
+
+Wheel 文件名 `{dist}-{version}-{py}-{abi}-{plat}.whl` 五段用 `-` 分隔；`py3-none-any` 表示纯 Python、任意平台。拆开打印后能对上 `pip install` 时看到的文件名。
 
 `py3-none-any` 表示：Python 3、无 ABI 标签、任意平台——典型纯 Python CLI 库。
 
@@ -58,10 +65,22 @@ build-backend = "hatchling.build"
 构建后端负责把 `logstats_pkg/` 打进 wheel。课内验证字符串：
 
 ```python run
-backend = "hatchling.build"
-assert backend.endswith(".build")
-print(backend)
+import tomllib
+
+snippet = """
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+"""
+bs = tomllib.loads(snippet)["build-system"]
+print("requires", bs["requires"])
+print("backend", bs["build-backend"])
+module, attr = bs["build-backend"].split(".", 1)
+print("import", module, "call", attr)
+print("ends with .build?", bs["build-backend"].endswith(".build"))
 ```
+
+`build-backend` 是「模块.可调用对象」字符串；`uv build` 会按 PEP 517 加载 `hatchling.build` 并把 `logstats_pkg/` 打进 wheel。解析 TOML 比手写 assert 更接近真实 `pyproject.toml`。
 
 ### 该打进包的内容
 
@@ -75,15 +94,24 @@ test_package.py   # 测试，不进 wheel
 ```
 
 ```python run
-import importlib.util
-from pathlib import Path
+import io
+import zipfile
 
-pkg = Path("logstats_pkg")
-files = ["__init__.py", "cli.py"]
-for f in files:
-    assert (pkg / f).name.endswith(".py") or True  # 课内逻辑占位
-print("package file list ok")
+wheel = io.BytesIO()
+with zipfile.ZipFile(wheel, "w") as zf:
+    zf.writestr("logstats_pkg/__init__.py", "")
+    zf.writestr("logstats_pkg/cli.py", "def console_main(): return 0\n")
+    zf.writestr("logstats_pkg-0.1.0.dist-info/METADATA", "Name: logstats_pkg\nVersion: 0.1.0\n")
+
+with zipfile.ZipFile(io.BytesIO(wheel.getvalue())) as zf:
+    names = sorted(zf.namelist())
+    for n in names:
+        print(n)
+    print("has package?", any(n.startswith("logstats_pkg/") for n in names))
+    print("has metadata?", any(n.endswith("METADATA") for n in names))
 ```
+
+Wheel 本质是 zip：课内用内存 zip 模拟 `uv build` 产物布局，列出应出现的包文件与 `dist-info/METADATA`，排除 `test_*.py` 这类不该进分发的路径。
 
 实际检查用 `uv build` 后 `unzip -l dist/*.whl` 查看成员列表。
 
@@ -98,8 +126,14 @@ print("package file list ok")
 ```python run raises=FileNotFoundError
 from pathlib import Path
 
-Path("dist/nonexistent.whl").read_bytes()
+dist = Path("dist")
+print("dist exists?", dist.exists())
+wheel = dist / "logstats_pkg-0.1.0-py3-none-any.whl"
+print("about to read", wheel)
+wheel.read_bytes()
 ```
+
+未跑 `uv build` 时 `dist/*.whl` 不存在；先打印路径与目录状态再 `read_bytes()`，会得到 `FileNotFoundError`，提醒发布前要在本地生成产物。
 
 课内提醒：构建前目录不存在会报错——先 `uv build`。
 

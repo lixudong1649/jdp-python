@@ -21,9 +21,16 @@ title: 16.3 mypy 类型检查
 def greet(name: str) -> str:
     return f"hi, {name}"
 
-print(greet("py"))
-assert greet.__annotations__["return"] is str
+samples = [("py", str), (123, int)]
+for value, expected_type in samples:
+    ann = greet.__annotations__["name"]
+    print("annotate expects", ann, "got", type(value).__name__)
+    out = greet(value) if isinstance(value, str) else greet(str(value))
+    print("output type", type(out).__name__, "value", out)
+print("return annotation", greet.__annotations__["return"])
 ```
+
+注解写在函数对象上，运行时仍可传入非 `str`（第三行用 `str(value)` 兜底演示）；mypy 会在静态分析时标红 `greet(123)`，而解释器不会自动拦截。
 
 mypy 在单独进程分析；Python 解释器仍可在运行时传入错误类型，除非你用运行时校验（Pydantic 等）。
 
@@ -33,8 +40,18 @@ mypy 在单独进程分析；Python 解释器仍可在运行时传入错误类�
 def add(a: int, b: int) -> int:
     return a + b
 
-assert add(1, 2) == 3
+def add_strings(a: int, b: int) -> int:
+    return str(a) + str(b)  # mypy: bad return
+
+cases = [(1, 2, 3), (0, 0, 0)]
+for a, b, want in cases:
+    got = add(a, b)
+    print(a, "+", b, "=", got, "ok", got == want)
+wrong = add_strings(1, 2)
+print("string concat masquerading as int", wrong, type(wrong))
 ```
+
+`add` 的返回与注解一致时 pytest 与 mypy 都满意；`add_strings` 返回 `str` 却标注 `-> int`，行为测试可能仍「通过」，只有 mypy 能抓住类型谎言。
 
 若写成 `def add(a, b): return str(a) + str(b)`，mypy 会报 incompatible return type；pytest 仍可能通过错误断言。
 
@@ -76,9 +93,19 @@ assert label({"name": "ada"}) == "ADA"
 | mypy | 类型不一致 | 业务逻辑错 |
 
 ```python run
-checks = {"pytest": "behavior", "mypy": "types"}
-assert checks["mypy"] == "types"
+def behavior_ok() -> bool:
+    return 1 + 1 == 2
+
+def type_ok(x: int) -> int:
+    return x * 2
+
+print("pytest cares", behavior_ok())
+print("mypy cares", type_ok.__annotations__)
+print("runtime allows", type_ok("3"))  # mypy would flag str
+print("doubled", type_ok(3))
 ```
+
+pytest 只断言 `behavior_ok` 的返回值；mypy 关心 `type_ok` 的签名。最后一行传入 `str` 仍能运行，说明静态类型检查是额外一层，不替代测试。
 
 
 ## 易错点
@@ -94,8 +121,19 @@ from typing import Any
 def first_key(d: dict[str, Any]) -> str:
     return next(iter(d))
 
-assert first_key({"a": 1}) == "a"
+payloads = [{"a": 1, "b": 2}, {"only": None}]
+for p in payloads:
+    key = first_key(p)
+    print("dict keys", list(p), "first key", key, "type", type(key).__name__)
+empty: dict[str, Any] = {}
+print("empty dict has first?", bool(empty))
+try:
+    first_key(empty)
+except StopIteration:
+    print("StopIteration if no keys")
 ```
+
+`dict[str, Any]` 告诉 mypy「键是 str、值暂不细究」；`first_key` 在空 dict 上会 `StopIteration`，说明 `Any` 没免除你对边界的运行时处理。
 
 ## 对照
 

@@ -23,12 +23,19 @@ title: 16.2 ruff 静态检查
 | `ruff format` | 统一缩进、引号、换行 | 团队可选 |
 
 ```python run
-# 课内示例：保持符合 E/F 规则的基础写法
-items = [1, 2, 3]
-total = sum(items)
-assert total == 6
-print("style ok")
+import ast
+
+source = "import os\nimport sys\nx = sum([1, 2, 3])\nprint(x)\n"
+tree = ast.parse(source)
+imports = [n.names[0].name for n in tree.body if isinstance(n, ast.Import)]
+names_used = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+unused = [m for m in imports if m not in names_used]
+print("imports", imports)
+print("unused like F401", unused)
+print("sum result", sum([1, 2, 3]))
 ```
+
+Ruff 的 F401「未使用导入」可用 `ast` 在浏览器里模拟：列出 import 的名字与 `Name` 节点引用对比。删掉未用的 `os`/`sys` 后，`unused` 列表会变空，相当于 `ruff check` 通过前的自查。
 
 ### 本仓库 ruff 配置
 
@@ -48,13 +55,22 @@ select = ["E", "F", "I", "UP"]
 课内模拟「规则命中」：
 
 ```python run
+import ast
 import math
 
 def circle_area(r: float) -> float:
     return math.pi * r * r
 
-assert round(circle_area(1), 5) == 3.14159
+good = ast.parse("import math\nmath.pi\n")
+print("with import", [n.id for n in ast.walk(good) if isinstance(n, ast.Name)])
+try:
+    exec(compile("x = math.pi\n", "<bad>", "exec"), {})
+except NameError as e:
+    print("F821-like", e.args[0].split()[0])
+print("area(1)", round(circle_area(1), 4))
 ```
+
+有 `import math` 时 `math.pi` 合法；若删掉导入仍引用 `math`，运行时会 `NameError`，对应 pyflakes F821。课内用 AST 列出名字引用，帮助你在跑 ruff 前先肉眼对齐导入与使用。
 
 若删掉 `import math` 仍使用 `math.pi`，`ruff check` 会报 F821 未定义。
 
@@ -70,10 +86,21 @@ assert round(circle_area(1), 5) == 3.14159
 含义：对 `scripts/` 下文件不检查行宽 E501 等。不要滥用——默认应全仓统一，只在有理由的目录登记例外（配置里用 per-file-ignores 表达，正文明说「例外目录」即可）。
 
 ```python run
-rules = {"scripts/*": ["E501"], "tests/check_course.py": ["E501"]}
-assert "E501" in rules["scripts/*"]
-print("ignore map ok")
+import tomllib
+
+snippet = """
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["E501", "E402"]
+"tests/check_course.py" = ["E501"]
+"""
+ignores = tomllib.loads(snippet)["tool"]["ruff"]["lint"]["per-file-ignores"]
+for path, codes in ignores.items():
+    print(path, "->", codes)
+print("scripts skip line length?", "E501" in ignores["scripts/*"])
+print("check_course long lines ok?", "E501" in ignores["tests/check_course.py"])
 ```
+
+`per-file-ignores` 是路径模式到规则码的映射；解析后能看到 `scripts/` 与校验脚本各自放宽了哪些规则，避免为了全仓 E501 去拆不可读的长消息行。
 
 ### 与 pytest 的配合
 
@@ -85,10 +112,20 @@ uv run pytest -q
 ```
 
 ```python run
-pipeline = ["ruff check", "pytest"]
-assert pipeline[0].startswith("ruff")
-assert "pytest" in pipeline
+pipeline = [
+    ("lint", "ruff check ."),
+    ("test", "pytest -q"),
+    ("type", "mypy examples/项目/16-项目模板"),
+]
+for stage, cmd in pipeline:
+    print(stage, "->", cmd.split()[0])
+first = pipeline[0][1]
+print("fail fast on", first)
+print("stages", len(pipeline))
+print("ends with tests?", pipeline[1][0] == "test")
 ```
+
+提交前按 lint → 测试 → 类型检查排序：任一阶段失败就应停止，不要把红灯留给 CI。打印的缩写阶段名对应你在终端实际敲的三条 `uv run` 命令。
 
 
 ## 易错点
