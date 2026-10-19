@@ -36,12 +36,17 @@ print(back == text)
 需要原地改几个字节时用 `bytearray`；算哈希、作为 dict 键时仍要 `bytes`。
 
 ```python run
-buf = bytearray(b"abc")
-buf[0] = ord("A")
-print(bytes(buf))
-print(hash(b"abc"))
+header = b"GET "
+payload = bytearray(b"index.html")
+payload[0:4] = b"home"
+print("mutable payload", bytes(payload))
+frozen = bytes(payload)
+print("immutable copy", frozen)
+print("same bytes?", frozen == bytes(payload))
+print("bytearray id changes", id(payload) != id(frozen))
 ```
 
+`bytearray` 可以原地改字节，再 `bytes(...)` 得到不可变副本；协议里常先改缓冲区，再交给只接受 `bytes` 的 API。上面输出对比了可变缓冲与 `bytes` 副本是否相同、以及二者是否为同一对象。
 网络协议里常见“长度前缀 + 载荷”：载荷部分是 bytes，头部字段解析完再 `.decode("ascii")` 成 str。
 
 ### 编码名称与 BOM
@@ -49,25 +54,42 @@ print(hash(b"abc"))
 常见编码名：`utf-8`（推荐）、`utf-8-sig`（读带 BOM 的 UTF-8 时会去掉 BOM）、`latin-1`（一字节一码点，适合“当作原始字节”的兜底解码）。
 
 ```python run
-bom = "\ufeff标题".encode("utf-8-sig")
-plain = bom.decode("utf-8-sig")
-print(repr(plain), plain[0])
+title = "\ufeff标题"
+raw_utf8 = title.encode("utf-8")
+raw_sig = title.encode("utf-8-sig")
+print("utf-8 first bytes", list(raw_utf8[:4]))
+print("utf-8-sig first bytes", list(raw_sig[:4]))
+plain = raw_sig.decode("utf-8-sig")
+print("decoded first char", repr(plain[0]), "text", plain)
+print("BOM stripped?", plain[0] != "\ufeff")
 ```
+
+`utf-8-sig` 会在文件头写入 EF BB BF（显示为 BOM），`decode("utf-8-sig")` 会去掉它，所以首字符是「标」而不是零宽字符。对比普通 `utf-8` 编码的前几个字节，能看出 sig 多出来的前缀。
 
 ### 解码失败与 errors=
 
 默认 `decode` 遇到非法字节会抛 `UnicodeDecodeError`。日志、爬虫、旧系统文件里常有脏字节，可按场景选择策略（生产环境慎用盲目 `ignore`）。
 
 ```python run raises=UnicodeDecodeError
-bad = b"\xff\xfe"
+chunk = b"LOG\xff\xfeWARN"
+print("raw hex tail", chunk[-4:].hex())
+print("attempt utf-8 decode on", len(chunk), "bytes")
+bad = chunk
 bad.decode("utf-8")
 ```
 
+这段模拟从旧系统读到的日志尾部混入非法 UTF-8 字节：先打印原始十六进制与长度，再按默认 `utf-8` 解码就会抛 `UnicodeDecodeError`，说明不能假设所有字节都是合法 UTF-8。
+
 ```python run
 bad = b"ok\xfftail"
-print(bad.decode("utf-8", errors="replace"))   # 非法字节变成 U+FFFD
-print(bad.decode("latin-1"))                   # 每字节对应一个 Unicode 码点
+as_replace = bad.decode("utf-8", errors="replace")
+as_latin1 = bad.decode("latin-1")
+print("replace", repr(as_replace), "len", len(as_replace))
+print("latin-1 tail char", repr(as_latin1[-1]), "codepoint", ord(as_latin1[-1]))
+print("same length as bytes?", len(as_latin1) == len(bad))
 ```
+
+`errors="replace"` 把非法字节变成 U+FFFD，文本变长但可读；`latin-1` 一字节一码点，长度与原始 `bytes` 相同，适合当“透明隧道”查看脏数据。
 
 ### 与文件 I/O 的关系
 
@@ -92,10 +114,16 @@ print(p.read_bytes()[:10])
 ```python run
 import sys
 
-print(sys.version_info[:2])
-print("defaultfilesystemencoding", sys.getdefaultencoding())
+vi = sys.version_info
+print("interpreter", vi.major, vi.minor, vi.micro)
+print("default encoding", sys.getdefaultencoding())
+print("filesystem encoding", sys.getfilesystemencoding())
+sample = "日志".encode("utf-8")
+print("utf-8 bytes for 日志", len(sample), sample[:6])
+print("decode roundtrip ok", sample.decode("utf-8") == "日志")
 ```
 
+解释器默认编码与文件系统编码在 3.12 上通常仍是 `utf-8`，但**读写文件仍应显式写 `encoding=`**，不要依赖这里打印的值在别的机器上一致。
 
 ## 易错点
 
@@ -107,13 +135,25 @@ print("defaultfilesystemencoding", sys.getdefaultencoding())
 - **子进程输出**：`subprocess.run(..., text=True, encoding="utf-8")` 直接得到 str；`text=False` 时自己 `.decode()`。
 
 ```python run
-payload = "ok".encode("utf-8")
-assert payload.decode("utf-8") == "ok"
+messages = ["ok", "上海", "emoji🙂"]
+for msg in messages:
+    raw = msg.encode("utf-8")
+    back = raw.decode("utf-8")
+    same = back == msg
+    print(msg, "chars", len(msg), "bytes", len(raw), "roundtrip", same)
+print("all ok", all(m.encode("utf-8").decode("utf-8") == m for m in messages))
 ```
 
+往返编码应逐个字符长度与字节长度不同（中文、emoji 占多字节），但解码后必须与原文相等；这是 `logstats` 假设日志为 UTF-8 文本的前提。
+
 ```python run raises=TypeError
-"a" + b"b"
+user = "a"
+packet = b"b"
+print("types", type(user).__name__, type(packet).__name__)
+combined = user + packet
 ```
+
+拼接前先打印两侧类型：一边是 `str` 一边是 `bytes`，Python 拒绝隐式转换，因此 `TypeError` 提醒你在边界上显式 `.encode()` 或 `.decode()`。
 
 ## 对照
 
