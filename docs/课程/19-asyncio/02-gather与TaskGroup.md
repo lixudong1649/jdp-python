@@ -47,22 +47,42 @@ asyncio.run(main())
 import asyncio
 import inspect
 
-def simulate_gather_order(delays: list[float]) -> list[int]:
-    indexed = sorted(enumerate(delays), key=lambda p: p[1])
-    finish_order = [i for i, _ in indexed]
-    results = list(range(len(delays)))
-    return [results[i] for i in range(len(delays))], finish_order
 
-delays = [0.03, 0.0, 0.01]
-result_tuple, finished = simulate_gather_order(delays)
+def coro_work(name: str, ticks: int):
+    for _ in range(ticks):
+        yield
+    return name
+
+
+def mini_gather(*factories):
+    gens = [(i, f()) for i, f in enumerate(factories)]
+    results: list[str | None] = [None] * len(factories)
+    finish_order: list[int] = []
+    while gens:
+        next_gens = []
+        for i, g in gens:
+            try:
+                g.send(None)
+                next_gens.append((i, g))
+            except StopIteration as e:
+                results[i] = e.value
+                finish_order.append(i)
+        gens = next_gens
+    return tuple(results), finish_order
+
+
+result_tuple, finished = mini_gather(
+    lambda: coro_work("first", 2),
+    lambda: coro_work("second", 1),
+)
 sig = inspect.signature(asyncio.gather)
 print("gather 参数", list(sig.parameters)[:2])
 print("结果元组顺序", result_tuple)
 print("完成先后索引", finished)
-print("元组顺序≠完成顺序", result_tuple != finished)
+print("元组顺序≠完成顺序", list(result_tuple) != [result_tuple[i] for i in finished])
 ```
 
-课内无法 `asyncio.run`，用 `simulate_gather_order` 对比：**gather 返回的元组按传入参数顺序**，而 `finished` 列表按假想延迟展示谁先结束。读 `asyncio.gather` 签名时留意 `return_exceptions` 等参数，完整时序请在本地 `asyncio.run` 实验。
+课内无法 `asyncio.run`，用手写 `mini_gather` 驱动生成器协程：**返回元组仍按参数顺序**（`first` 在前），`finish_order` 记录谁先跑完（`second` 先结束）。读 `asyncio.gather` 签名时留意 `return_exceptions` 等参数，完整时序请在本地 `asyncio.run` 实验。
 
 ```python
 async def main() -> None:
@@ -78,21 +98,29 @@ async def main() -> None:
 
 ```python run
 import asyncio
-import sys
+import inspect
 
-vi = sys.version_info
-has_tg = hasattr(asyncio, "TaskGroup")
-min_ok = vi >= (3, 11)
-print("版本", f"{vi.major}.{vi.minor}", "满足>=3.11", min_ok)
-print("asyncio.TaskGroup 存在", has_tg)
-if has_tg:
-    print("TaskGroup 用于结构化并发", asyncio.TaskGroup.__name__)
+
+def structured_concurrency_notes():
+    notes = ["gather: 并行 await，结果顺序与参数一致"]
+    if hasattr(asyncio, "TaskGroup"):
+        notes.append("TaskGroup: 子任务失败会取消同组其余任务")
+    notes.append("create_task: 把协程包装成 Task 交给循环")
+    return notes
+
+
+for line in structured_concurrency_notes():
+    print(line)
+print("gather is coroutine fn", asyncio.iscoroutinefunction(asyncio.gather))
+if hasattr(asyncio, "TaskGroup"):
+    params = list(inspect.signature(asyncio.TaskGroup.__init__).parameters)
+    print("TaskGroup.__init__ params", params[:3])
 else:
-    print("本环境无 TaskGroup", "请升级解释器")
-print("本仓库目标 3.12", min_ok and has_tg)
+    print("TaskGroup missing", "upgrade for structured concurrency")
+print("use TaskGroup when siblings must cancel together", hasattr(asyncio, "TaskGroup"))
 ```
 
-TaskGroup 自 3.11 进入标准库；输出同时打印版本元组与 `hasattr`，避免只记「3.11+」却不在当前解释器验证。本课程固定 3.12，通常两项都为真，若课内环境较旧则第二行会提示缺失 API。
+`gather` 与 `TaskGroup` 解决不同失败语义：前者默认收集或传播异常，后者强调同组任务同生共死。课内用 `inspect` 看 `TaskGroup` 构造参数，比只打印版本号更能对照文档里的结构化并发模型。
 
 | API | 并发单元 | 失败行为 |
 |---|---|---|

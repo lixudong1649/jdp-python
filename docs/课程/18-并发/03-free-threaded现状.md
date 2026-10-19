@@ -22,19 +22,46 @@ title: 18.3 free-threaded 现状
 课内用版本元信息确认当前解释器（浏览器与本地均可）：
 
 ```python run
-import sys
+def worker(shared, use_lock, times):
+    for _ in range(times):
+        if use_lock:
+            while shared.get("busy"):
+                yield
+            shared["busy"] = True
+        base = shared["n"]
+        yield
+        shared["n"] = base + 1
+        if use_lock:
+            shared["busy"] = False
 
-vi = sys.version_info
-version_tag = f"{vi.major}.{vi.minor}.{vi.micro}"
-is_314_plus = vi >= (3, 14)
-mentions_ft = "free-threaded" in sys.version.lower()
-print("解释器版本", version_tag)
-print("版本元组>=3.14", is_314_plus)
-print("version 字符串含 free-threaded", mentions_ft)
-print("默认 wheel 仍多为 GIL", not mentions_ft or "需读发行说明")
+
+def drive(shared, use_lock, times):
+    gens = [worker(shared, use_lock, times), worker(shared, use_lock, times)]
+    active = list(gens)
+    while active:
+        nxt = []
+        for g in active:
+            try:
+                g.send(None)
+                nxt.append(g)
+            except StopIteration:
+                pass
+        active = nxt
+
+
+times = 5
+unsafe = {"n": 0}
+safe = {"n": 0, "busy": False}
+drive(unsafe, False, times)
+drive(safe, True, times)
+expected = times * 2
+print("unsafe total", unsafe["n"], "safe total", safe["n"])
+print("expected increments", expected)
+print("unsafe lost", expected - unsafe["n"])
+print("safe lost", expected - safe["n"])
 ```
 
-输出里的版本号描述**当前课内解释器**，不等于你已安装 nogil 构建。`mentions_ft` 为真才说明字符串里标了 free-threaded；多数 pip 包仍是带 GIL 的 CPython，选型时以 `python -VV` 与官方发行说明为准。
+课内用生成器 `send` 驱动两个 worker，在 `yield` 处模拟读-改-写被插队：无锁时两次都基于同一 `base` 会丢增量；加 `busy` 标志后每次更新完才切换，safe 应达到 `times * 2`。这与 free-threaded 下不能假设“整段字节码原子”是同一类风险，只是不用 `threading` 演示。
 
 ### free-threaded 改变了什么
 
