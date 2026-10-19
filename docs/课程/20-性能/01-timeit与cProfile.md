@@ -22,12 +22,18 @@ title: 20.1 timeit 与 cProfile
 ```python run
 import timeit
 
-t_list = timeit.timeit("sum(range(200))", number=50_000)
-t_comp = timeit.timeit("sum(i for i in range(200))", number=50_000)
-print(t_list > 0, t_comp > 0, t_list < t_comp * 3)
+N = 200
+REPEAT = 50_000
+t_list = timeit.timeit("sum(range(N))", setup="N=200", number=REPEAT)
+t_comp = timeit.timeit("sum(i for i in range(N))", setup="N=200", number=REPEAT)
+ratio = t_list / max(t_comp, 1e-12)
+print("number=", REPEAT, "（总次数，不是单次）")
+print("sum(range) 总秒", round(t_list, 4))
+print("生成器求和 总秒", round(t_comp, 4))
+print("内置 range 更快倍数≈", round(ratio, 2))
 ```
 
-内置 `sum(range(...))` 通常更快；倍数关系随机器变化，**看趋势**即可。
+`timeit` 返回的是 **number 次执行的总耗时**，不是一次循环的时间。输出对比两种求和写法在同一 `number` 下的总秒数与比值，内置 `sum(range(...))` 通常更小；绝对值随机器变，结论看相对倍数。
 
 ### 比较两个可调用对象
 
@@ -81,10 +87,17 @@ print(result >= 0, len(stats) >= 1)
 import timeit
 
 setup = "from math import sqrt"
-stmt = "[sqrt(i) for i in range(100)]"
-print(timeit.timeit(stmt, setup=setup, number=5000) < 2.0)
+stmt_list = "[sqrt(i) for i in range(100)]"
+stmt_loop = "total=0\nfor i in range(100):\n    total+=sqrt(i)"
+t_list = timeit.timeit(stmt_list, setup=setup, number=5000)
+t_loop = timeit.timeit(stmt_loop, setup=setup, number=5000)
+print("列表推导 总秒", round(t_list, 4))
+print("显式循环 总秒", round(t_loop, 4))
+print("推导/循环 比值", round(t_list / max(t_loop, 1e-12), 2))
+print("测量流程", "粗比 -> cProfile -> 改热点")
 ```
 
+同一 `setup` 下对比两种写法，说明 **timeit 适合在改代码前粗筛热点**。最后一行打印建议流程：先 timeit 再 profile，避免凭直觉优化非热点函数。
 
 ## 易错点
 

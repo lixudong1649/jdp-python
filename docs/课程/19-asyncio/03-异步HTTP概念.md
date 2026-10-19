@@ -20,17 +20,28 @@ title: 19.3 异步 HTTP 概念
 标准库 `urllib.request.urlopen` 是阻塞调用，适合脚本，不适合放在高频 async 路由里。
 
 ```python run
+import io
 import urllib.error
 import urllib.request
 
-def fetch_status_example() -> int:
-    # 不访问外网：用 file:// 或构造逻辑；这里解析概念用常量模拟
-    return 200
+FAKE_BODY = b'{"text":"ok"}'
 
-print(fetch_status_example() == 200)
+def parse_status_line(line: str) -> int:
+    parts = line.split()
+    return int(parts[1])
+
+def read_fake_response(raw: bytes) -> tuple[int, str]:
+    head, _, body = raw.partition(b"\r\n\r\n")
+    status = parse_status_line(head.decode("ascii"))
+    return status, body.decode("utf-8")
+
+status, body = read_fake_response(b"HTTP/1.1 200 OK\r\n\r\n" + FAKE_BODY)
+print("解析状态码", status)
+print("响应体", body)
+print("urllib 真实 urlopen 会阻塞", "async 路由里应 await 专用客户端")
 ```
 
-真实外网请求在 CI 中不稳定；阶段 22 会在可控环境里演示 httpx。本课重点在 **调用模型**，不是特定域名。
+课内用内存字节流模拟 **状态行 + 体**，展示 HTTP 响应分层，而不发起外网 `urlopen`。真实 `urllib.request.urlopen` 在 `async def` 里会阻塞整个事件循环；阶段 22 的 httpx 则把等待挂到 loop 上。
 
 ### async 客户端应长什么样
 
@@ -61,10 +72,23 @@ async with httpx.AsyncClient(timeout=10.0) as client:
 import asyncio
 import inspect
 
-print(hasattr(asyncio, "to_thread"), inspect.iscoroutinefunction(asyncio.sleep))
+def blocking_read(path: str) -> str:
+    return f"sync-read:{path}"
+
+async def route(path: str) -> str:
+    if hasattr(asyncio, "to_thread"):
+        return await asyncio.to_thread(blocking_read, path)
+    return blocking_read(path)
+
+coro = route("/api/x")
+print("route 是协程", inspect.iscoroutine(coro))
+print("to_thread 可用", hasattr(asyncio, "to_thread"))
+print("sleep 是协程函数", inspect.iscoroutinefunction(asyncio.sleep))
+coro.close()
+print("遗留同步 SDK 应走 to_thread", "避免在 loop 里直接 blocking_read")
 ```
 
-### 超时与并发
+`route` 展示推荐形状：在 async 函数里用 `await asyncio.to_thread(...)` 把阻塞读盘/urllib 丢进线程池。课内只创建协程并 `close()`，不启动 loop；输出确认 `to_thread` 与 `asyncio.sleep` 的可等待性质。
 
 多个 URL 并发时，常 `gather` 多个 `client.get`，每个带 `timeout`。某一请求挂起不应拖死全部（取决于客户端实现与 `gather` 选项）。
 
@@ -95,9 +119,24 @@ print(classify(404), classify(502))
 把整数当状态码对象使用会类型错误：
 
 ```python run raises=AttributeError
-status = 200
-print(status.ok)
+class HttpResponse:
+    def __init__(self, status: int, body: str) -> None:
+        self.status = status
+        self.body = body
+
+    @property
+    def ok(self) -> bool:
+        return 200 <= self.status < 300
+
+resp = HttpResponse(404, "missing")
+print("对象 ok", resp.ok, "status", resp.status)
+status_code = 200
+print("整数类型", type(status_code).__name__)
+print("准备访问 .ok 的其实是 int", status_code)
+print(status_code.ok)
 ```
+
+先用 `HttpResponse` 打印 404 时 `ok` 为假，说明 **`.ok` 是响应对象的属性**；最后一行对裸整数 `200` 访问 `.ok` 触发 `AttributeError`，对应把状态码当 httpx/requests 响应对象用的常见误写。
 
 ## 对照
 

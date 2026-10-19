@@ -45,12 +45,24 @@ asyncio.run(main())
 
 ```python run
 import asyncio
+import inspect
 
-g = asyncio.gather
-print(g.__name__, g.__module__ == "asyncio")
+def simulate_gather_order(delays: list[float]) -> list[int]:
+    indexed = sorted(enumerate(delays), key=lambda p: p[1])
+    finish_order = [i for i, _ in indexed]
+    results = list(range(len(delays)))
+    return [results[i] for i in range(len(delays))], finish_order
+
+delays = [0.03, 0.0, 0.01]
+result_tuple, finished = simulate_gather_order(delays)
+sig = inspect.signature(asyncio.gather)
+print("gather 参数", list(sig.parameters)[:2])
+print("结果元组顺序", result_tuple)
+print("完成先后索引", finished)
+print("元组顺序≠完成顺序", result_tuple != finished)
 ```
 
-### TaskGroup：结构化并发（3.11+）
+课内无法 `asyncio.run`，用 `simulate_gather_order` 对比：**gather 返回的元组按传入参数顺序**，而 `finished` 列表按假想延迟展示谁先结束。读 `asyncio.gather` 签名时留意 `return_exceptions` 等参数，完整时序请在本地 `asyncio.run` 实验。
 
 ```python
 async def main() -> None:
@@ -65,13 +77,22 @@ async def main() -> None:
 课内确认当前解释器版本是否满足 TaskGroup（3.11+）：
 
 ```python run
+import asyncio
 import sys
 
-ok = sys.version_info >= (3, 11)
-print(ok, hasattr(__import__("asyncio"), "TaskGroup"))
+vi = sys.version_info
+has_tg = hasattr(asyncio, "TaskGroup")
+min_ok = vi >= (3, 11)
+print("版本", f"{vi.major}.{vi.minor}", "满足>=3.11", min_ok)
+print("asyncio.TaskGroup 存在", has_tg)
+if has_tg:
+    print("TaskGroup 用于结构化并发", asyncio.TaskGroup.__name__)
+else:
+    print("本环境无 TaskGroup", "请升级解释器")
+print("本仓库目标 3.12", min_ok and has_tg)
 ```
 
-### 与线程池 gather 的类比
+TaskGroup 自 3.11 进入标准库；输出同时打印版本元组与 `hasattr`，避免只记「3.11+」却不在当前解释器验证。本课程固定 3.12，通常两项都为真，若课内环境较旧则第二行会提示缺失 API。
 
 | API | 并发单元 | 失败行为 |
 |---|---|---|
@@ -80,11 +101,24 @@ print(ok, hasattr(__import__("asyncio"), "TaskGroup"))
 | `TaskGroup` | Task | 一组内互相取消 |
 
 ```python run
-# 用列表保存「待驱动」的协程工厂名，帮助读 SDK 源码
-names = ["create_task", "gather", "TaskGroup"]
-print("gather" in names, len(names) == 3)
+import asyncio
+
+API_ROLES = {
+    "create_task": "包装协程为 Task 并调度",
+    "gather": "并行等待多个 awaitable，结果按参数顺序",
+    "TaskGroup": "子任务失败时取消同组其余任务",
+}
+
+def pick_api(name: str) -> str:
+    return API_ROLES.get(name, "unknown")
+
+for key in ("gather", "TaskGroup"):
+    print(key, "->", pick_api(key))
+print("gather 可调用", callable(asyncio.gather))
+print("TaskGroup 是类", asyncio.TaskGroup.__name__ if hasattr(asyncio, "TaskGroup") else "n/a")
 ```
 
+把三个 API 写成角色表，输出强调 **gather 保结果顺序**、**TaskGroup 管整组取消**。读 Agent SDK 时看到 `create_task` / `gather` 应能对应到表中语义，而不是与线程池「先完成先取」混为一谈。
 
 ## 易错点
 

@@ -22,12 +22,18 @@ title: 18.2 multiprocessing 与 futures
 ```python run
 from concurrent.futures import Future
 
+def describe(fut: Future[int], label: str) -> None:
+    print(label, "done=", fut.done(), "cancelled=", fut.cancelled())
+
 fut: Future[int] = Future()
+describe(fut, "新建")
 fut.set_result(100)
-print(fut.done(), fut.result())
+describe(fut, "set_result 后")
+value = fut.result()
+print("result()=", value, "type=", type(value).__name__)
 ```
 
-`result()` 在未完成时会阻塞；`done()` 查询状态。真实池子里由调度器调用 `set_result` / `set_exception`。
+`describe` 在设置结果前后各打印一次状态：未完成时 `done` 为假，调用 `set_result` 后变为真且 `result()` 立刻返回 100。这对应线程池 worker 在任务结束时替你把 Future 标记完成；课内用手动 `set_result` 理解 API，而不启动真实池子。
 
 ### Executor 接口：submit 与 map
 
@@ -40,12 +46,21 @@ print(fut.done(), fut.result())
 def fetch_label(url: str) -> str:
     return f"body:{url}"
 
+def map_in_order(fn, items: list[str]) -> list[str]:
+    return [fn(x) for x in items]
+
+def completion_order(finish_ms: list[int]) -> list[int]:
+    return [i for i, _ in sorted(enumerate(finish_ms), key=lambda p: p[1])]
+
 urls = ["c", "a", "b"]
-ordered = [fetch_label(u) for u in urls]
-print(ordered)
+mapped = map_in_order(fetch_label, urls)
+finished_first = completion_order([30, 5, 12])
+print("map 保序", mapped)
+print("完成先后索引", finished_first)
+print("同批 URL 数", len(urls), len(mapped))
 ```
 
-### 线程池 vs 进程池（选型）
+`map_in_order` 模拟 `executor.map`：输出顺序始终与 `urls` 一致。`completion_order` 用假定的完成毫秒说明 `as_completed` 按完成先后迭代，索引 `[1,2,0]` 与 map 的 `['c','a','b']` 不同——读下载器代码时要分清「保序 map」与「谁先完成谁先取」。
 
 | Executor | 适用 | 注意 |
 |---|---|---|
@@ -94,13 +109,24 @@ if __name__ == "__main__":
 默认 `min(32, os.cpu_count() + 4)`（线程池）。I/O 密集可适当加大；CPU 密集进程池常取 **CPU 核数**，过大反而上下文切换浪费。
 
 ```python run
-# 默认线程池 worker 上限公式（与标准库默认策略一致，课内用固定 logical_cpus 演示）
-logical_cpus = 4
-default_workers = min(32, logical_cpus + 4)
-print(logical_cpus, default_workers == 8)
+def default_thread_workers(logical_cpus: int) -> int:
+    return min(32, logical_cpus + 4)
+
+def suggest_pool(workload: str, cpus: int) -> str:
+    if workload == "io":
+        return f"thread≈{default_thread_workers(cpus)}"
+    return f"process≈{cpus}"
+
+cpus = 4
+io_workers = default_thread_workers(cpus)
+cpu_workers = cpus
+print("logical_cpus", cpus)
+print("默认线程池上限", io_workers)
+print("I/O 建议", suggest_pool("io", cpus))
+print("CPU 建议", suggest_pool("cpu", cpus))
 ```
 
-`shutdown(wait=True)` 会阻塞直到已提交任务结束；在长时间服务里，更常见的是在 `with` 块退出时自动 `shutdown`，或显式 `executor.shutdown(cancel_futures=True)` 放弃未开始的任务（3.9+ `cancel_futures` 参数）。读服务端代码时看到 `wait=False` 要警惕：主线程可能先退出而任务仍在跑。
+标准库线程池默认 `min(32, cpu_count+4)`，课内用 4 核得到 8。I/O 密集可接近该上限重叠等待；CPU 密集进程池通常不超过核数，否则切换开销会吞掉收益。在长时间服务里，更常见的是在 `with` 块退出时自动 `shutdown`，或显式 `executor.shutdown(cancel_futures=True)` 放弃未开始的任务（3.9+ `cancel_futures` 参数）。读服务端代码时看到 `wait=False` 要警惕：主线程可能先退出而任务仍在跑。
 
 课内用已完成的 `Future` 模拟 `as_completed` 的「先完成先取结果」语义（不启动线程）：
 

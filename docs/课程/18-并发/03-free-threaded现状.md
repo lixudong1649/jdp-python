@@ -25,11 +25,16 @@ title: 18.3 free-threaded 现状
 import sys
 
 vi = sys.version_info
-print(vi.major, vi.minor, vi.micro >= 0)
-print("free-threaded" in sys.version.lower() or vi >= (3, 14))
+version_tag = f"{vi.major}.{vi.minor}.{vi.micro}"
+is_314_plus = vi >= (3, 14)
+mentions_ft = "free-threaded" in sys.version.lower()
+print("解释器版本", version_tag)
+print("版本元组>=3.14", is_314_plus)
+print("version 字符串含 free-threaded", mentions_ft)
+print("默认 wheel 仍多为 GIL", not mentions_ft or "需读发行说明")
 ```
 
-第二行打印 `True` 只表示「版本号已达 3.14+」，**不**代表当前构建一定启用了 nogil；需查看发行说明与 `sys` 提供的 GIL 检测 API（3.13+ 实验字段以官方文档为准）。
+输出里的版本号描述**当前课内解释器**，不等于你已安装 nogil 构建。`mentions_ft` 为真才说明字符串里标了 free-threaded；多数 pip 包仍是带 GIL 的 CPython，选型时以 `python -VV` 与官方发行说明为准。
 
 ### free-threaded 改变了什么
 
@@ -90,18 +95,26 @@ else:
 free-threaded **不替代** asyncio：高并发 I/O 仍常用事件循环。也不废除 `multiprocessing`：进程隔离仍是重 CPU 与故障隔离手段。
 
 ```python run
-import asyncio
-import inspect
+def shared_counter_steps(steps: int) -> tuple[int, int]:
+    total = 0
+    for _ in range(steps):
+        total += 1
+    return total, total
 
-async def ping() -> str:
-    return "pong"
+def explain_race(total: int, expected: int) -> str:
+    if total == expected:
+        return "单线程结果一致"
+    return "多线程无锁可能丢增量"
 
-coro = ping()
-print(inspect.iscoroutine(coro))
-coro.close()
+a, b = shared_counter_steps(5)
+msg = explain_race(a, 5)
+print("单线程递增", a, "期望", 5)
+print("诊断", msg)
+print("free-threaded 后多线程 CPU 可能并行", "仍要显式锁")
+print("与 asyncio 无关", "I/O 仍用事件循环")
 ```
 
-协程对象可在课内创建；完整 `asyncio.run` 请在本地运行阶段 19 项目。
+这段用纯 Python 递增说明：**无论是否有 GIL**，多个线程同时改同一整数都需要锁保护逻辑不变量。free-threaded 让 CPU 字节码可能真并行，但不会替你做同步；高并发 I/O 仍应走 asyncio（阶段 19），而不是指望去掉 GIL 就万能。
 
 阅读官方 What's New 时，请区分 **「构建选项」** 与 **「默认 wheel」**：PyPI 上名为 `cp312` 的轮子通常仍假设 GIL；nogil 标签与包名规则以 [packaging 讨论](https://packaging.python.org/) 与 3.14 文档为准，不要凭记忆猜标签字符串。
 
@@ -129,10 +142,21 @@ else:
 错误版本假设会导致错误的安全感：
 
 ```python run raises=AssertionError
-# 不能用「版本 < 3.14」断言「永远没有官方 nogil 构建」——3.14 已提供可选构建
+def migration_checklist() -> dict[str, str]:
+    return {
+        "wheels": "核对扩展是否声明 nogil 兼容",
+        "bench": "用 timeit 重测 CPU 与 I/O 路径",
+    }
+
+checklist = migration_checklist()
+print("升级前条目数", len(checklist))
+print("第一项", checklist["wheels"])
+# 错误假设：3.14 起官方已有可选 free-threaded 构建，不能再写「永远 <3.14 无 nogil」
 policy = (3, 14)
 assert policy < (3, 14), "官方已提供 free-threaded 选项，请读 18.3"
 ```
+
+清单打印说明迁移要先查 wheel 与压测；随后的断言故意用过时前提 `(3,14) < (3,14)` 触发 `AssertionError`，提醒文档与口头结论不能停留在「3.14 之前绝无 nogil」的旧说法。
 
 ## 对照
 
