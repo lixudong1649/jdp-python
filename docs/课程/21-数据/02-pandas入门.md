@@ -110,16 +110,17 @@ print(mean_by_city(rows))
 ```python run raises=KeyError
 row = {"city": "上海", "humidity": "65%"}
 expected_cols = ("city", "temp", "humidity")
-print("当前行键", sorted(row.keys()))
-print("期望列", expected_cols)
+keys = sorted(row.keys())
 missing = [c for c in expected_cols if c not in row]
-print("缺失列", missing)
+print("row keys", keys, "count", len(keys))
+print("schema cols", len(expected_cols), "missing", missing, "n_missing", len(missing))
+print("has temp", "temp" in row, "would fail on", row.get("temp"))
 if missing:
-    print("访问缺失列 temp 前已发现缺口")
+    print("about to index missing", missing[0])
 _ = row["temp"]
 ```
 
-字典行缺 `temp` 却按完整 schema 去索引，会先打印现有键与缺失列名单，再触发 `KeyError`。这与 `DataFrame` 取不存在的列名失败类似，探索时应先 `columns`/`keys()` 再聚合。
+字典行缺 `temp` 却按完整 schema 去索引，会先打印现有键、`missing` 名单与 `len(missing)`，再触发 `KeyError`。这与 `DataFrame` 取不存在的列名失败类似，探索时应先 `columns`/`keys()` 再聚合。
 
 ## 对照
 

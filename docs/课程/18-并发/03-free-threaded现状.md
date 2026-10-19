@@ -122,26 +122,42 @@ else:
 free-threaded **不替代** asyncio：高并发 I/O 仍常用事件循环。也不废除 `multiprocessing`：进程隔离仍是重 CPU 与故障隔离手段。
 
 ```python run
-def shared_counter_steps(steps: int) -> tuple[int, int]:
-    total = 0
+def worker(shared: dict[str, int], steps: int):
     for _ in range(steps):
-        total += 1
-    return total, total
+        base = shared["n"]
+        yield
+        shared["n"] = base + 1
 
-def explain_race(total: int, expected: int) -> str:
-    if total == expected:
-        return "单线程结果一致"
-    return "多线程无锁可能丢增量"
 
-a, b = shared_counter_steps(5)
-msg = explain_race(a, 5)
-print("单线程递增", a, "期望", 5)
-print("诊断", msg)
-print("free-threaded 后多线程 CPU 可能并行", "仍要显式锁")
-print("与 asyncio 无关", "I/O 仍用事件循环")
+def drive_race(shared: dict[str, int], steps: int) -> int:
+    gens = [worker(shared, steps), worker(shared, steps)]
+    active = list(gens)
+    while active:
+        nxt = []
+        for g in active:
+            try:
+                g.send(None)
+                nxt.append(g)
+            except StopIteration:
+                pass
+        active = nxt
+    return shared["n"]
+
+
+expected = 10
+unsafe = {"n": 0}
+drive_race(unsafe, 5)
+lost = expected - unsafe["n"]
+single = {"n": 0}
+for _ in range(expected):
+    single["n"] += 1
+print("unsafe counter", unsafe["n"], "expected", expected, "lost", lost)
+print("single-thread", single["n"], "matches", single["n"] == expected)
+print("race shows lost increments", lost > 0)
+print("still need locks when sharing", lost, "!=", 0)
 ```
 
-这段用纯 Python 递增说明：**无论是否有 GIL**，多个线程同时改同一整数都需要锁保护逻辑不变量。free-threaded 让 CPU 字节码可能真并行，但不会替你做同步；高并发 I/O 仍应走 asyncio（阶段 19），而不是指望去掉 GIL 就万能。
+两个 `worker` 在 `yield` 处交错读-改-写同一 `shared["n"]`，计数会低于 `expected`；单线程循环则得到满额。free-threaded 让这种交错更常见，**共享可变状态仍要锁或队列**，与 asyncio 处理 I/O 并发是不同层面的问题。
 
 阅读官方 What's New 时，请区分 **「构建选项」** 与 **「默认 wheel」**：PyPI 上名为 `cp312` 的轮子通常仍假设 GIL；nogil 标签与包名规则以 [packaging 讨论](https://packaging.python.org/) 与 3.14 文档为准，不要凭记忆猜标签字符串。
 

@@ -47,12 +47,15 @@ def run_cell(code: str) -> None:
 run_cell("lines = RAW.strip().splitlines()")
 run_cell("header, *rows = lines")
 run_cell("preview = {'header': header, 'rows': rows[:2], 'total': len(rows)}")
-print("单元 1 后 keys", sorted(k for k in kernel if not k.startswith("_")))
-print("预览", kernel["preview"])
-print("说明", "先定义 RAW 再拆行，顺序与 notebook 从上到下执行一致")
+public_keys = sorted(k for k in kernel if not k.startswith("_"))
+preview = kernel["preview"]
+assert isinstance(preview, dict)
+print("public keys", public_keys, "n_keys", len(public_keys))
+print("preview rows", len(preview["rows"]), "total", preview["total"])
+print("header", preview["header"], "raw lines", len(RAW.strip().splitlines()))
 ```
 
-用 `exec` 模拟三个单元格共享同一内核命名空间：后一个单元格依赖前一个留下的 `lines`。若乱序执行，`header` 尚未定义就会报错，这正是 Jupyter 里「视觉顺序 ≠ 执行顺序」的课内缩影。
+用 `exec` 模拟三个单元格共享同一内核命名空间：后一个单元格依赖前一个留下的 `lines`。打印的 `preview` 行数与 `RAW` 拆行结果来自真实计算，乱序执行时 `header` 未定义会先报错，对应 Jupyter「视觉顺序 ≠ 执行顺序」。
 
 ### 与 pandas 静态示例对照
 
