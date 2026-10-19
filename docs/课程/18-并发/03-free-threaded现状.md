@@ -198,7 +198,35 @@ assert supports_modern_concurrency(3, 12) is True
 assert supports_modern_concurrency(3, 11) is False
 ```
 
-### 练习 2：带锁的递增器
+### 练习 2：GIL 探测摘要
+
+实现 `gil_probe_label() -> str`：若 `sys` 提供 `_is_gil_enabled()`，返回 `"enabled"` 或 `"disabled"`（按布尔值）；否则返回 `"unknown"`。不要捕获属性错误以外的异常。
+
+```python exercise id=s18-l03-gilprobe
+# --- starter ---
+import sys
+
+def gil_probe_label() -> str:
+    return "enabled"
+# --- solution ---
+import sys
+
+def gil_probe_label() -> str:
+    probe = getattr(sys, "_is_gil_enabled", None)
+    if probe is None:
+        return "unknown"
+    return "enabled" if probe() else "disabled"
+# --- check ---
+import sys
+
+label = gil_probe_label()
+if hasattr(sys, "_is_gil_enabled"):
+    assert label in ("enabled", "disabled")
+else:
+    assert label == "unknown"
+```
+
+### 练习 3：带锁的递增器
 
 补全 `SafeBox`：`increment` 在锁内把 `self.value` 加 1 并返回新值。
 
