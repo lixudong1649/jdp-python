@@ -1,0 +1,96 @@
+命令: uv run python tests/check_course.py
+开始时间: 2026-10-19 08:13:20 +0800
+---
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 107 个，其他文档 16 个
+
+通过：
+  示例运行: 401
+  练习参考答案通过（浏览器）: 172
+  练习参考答案通过（本地）: 3
+  练习起始代码被判失败: 175
+  静态代码语法: 110
+  源码副本一致: 5
+  课程结构: 81
+  链接: 811
+  v2.1 量化结构: 45
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  练习参考答案通过合计: 175（浏览器 172 + 本地 3）
+  （唯一示例 397 个，唯一练习 175 道，解释器 1 个）
+
+失败 70 项：
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/01-编码与bytes.md:38 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/01-编码与bytes.md:51 有效代码 3 行 < 5
+  ✗ v2.3 R3 docs/课程/14-文本文件与命令行/01-编码与bytes.md:61 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/01-编码与bytes.md:66 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/01-编码与bytes.md:92 有效代码 3 行 < 5
+  ✗ v2.3 R2 docs/课程/14-文本文件与命令行/01-编码与bytes.md:92 仅 import/print
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/01-编码与bytes.md:109 有效代码 2 行 < 5
+  ✗ v2.3 R3 docs/课程/14-文本文件与命令行/01-编码与bytes.md:114 raises 演示有效代码 1 行 < 3
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/02-re正则.md:22 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/02-re正则.md:36 有效代码 3 行 < 5
+  ✗ v2.3 R2 docs/课程/14-文本文件与命令行/02-re正则.md:36 仅 import/print
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/02-re正则.md:47 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/02-re正则.md:89 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/14-文本文件与命令行/02-re正则.md:105 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/01-src布局与pyproject.md:94 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/02-ruff.md:25 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/02-ruff.md:50 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/02-ruff.md:72 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/02-ruff.md:87 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/03-mypy.md:20 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/03-mypy.md:32 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/03-mypy.md:78 有效代码 2 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/03-mypy.md:91 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/16-工具链与项目结构/04-logging配置与pdb.md:76 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/01-wheel与构建后端.md:22 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/01-wheel与构建后端.md:60 有效代码 3 行 < 5
+  ✗ v2.3 R5 docs/课程/17-打包与发布/01-wheel与构建后端.md:77 含恒真断言（or True / assert True）
+  ✗ v2.3 R3 docs/课程/17-打包与发布/01-wheel与构建后端.md:98 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R1 docs/课程/17-打包与发布/02-版本与入口脚本.md:56 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/02-版本与入口脚本.md:67 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/02-版本与入口脚本.md:82 有效代码 2 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/02-版本与入口脚本.md:95 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/03-发布流程.md:30 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/03-发布流程.md:45 有效代码 2 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/03-发布流程.md:59 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/17-打包与发布/03-发布流程.md:71 有效代码 2 行 < 5
+  ✗ v2.3 R1 docs/课程/18-并发/02-multiprocessing与futures.md:22 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/18-并发/02-multiprocessing与futures.md:96 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/18-并发/03-free-threaded现状.md:24 有效代码 4 行 < 5
+  ✗ v2.3 R3 docs/课程/18-并发/03-free-threaded现状.md:131 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R1 docs/课程/19-asyncio/02-gather与TaskGroup.md:46 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/19-asyncio/02-gather与TaskGroup.md:67 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/19-asyncio/02-gather与TaskGroup.md:82 有效代码 2 行 < 5
+  ✗ v2.3 R1 docs/课程/19-asyncio/03-异步HTTP概念.md:60 有效代码 3 行 < 5
+  ✗ v2.3 R2 docs/课程/19-asyncio/03-异步HTTP概念.md:60 仅 import/print
+  ✗ v2.3 R3 docs/课程/19-asyncio/03-异步HTTP概念.md:97 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R1 docs/课程/20-性能/01-timeit与cProfile.md:22 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/20-性能/01-timeit与cProfile.md:80 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/20-性能/02-复杂度与数据结构.md:22 有效代码 4 行 < 5
+  ✗ v2.3 R3 docs/课程/20-性能/02-复杂度与数据结构.md:99 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R1 docs/课程/20-性能/03-常见优化.md:22 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/20-性能/03-常见优化.md:71 有效代码 3 行 < 5
+  ✗ v2.3 R1 docs/课程/21-数据/01-NumPy入门.md:101 有效代码 3 行 < 5
+  ✗ v2.3 R3 docs/课程/21-数据/02-pandas入门.md:110 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R1 docs/课程/22-Web与API/01-HTTP与ASGI.md:42 有效代码 4 行 < 5
+  ✗ v2.3 R3 docs/课程/22-Web与API/01-HTTP与ASGI.md:93 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R3 docs/课程/23-Agent实战/03-流式输出.md:96 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R1 docs/课程/24-Python内部/01-名字绑定与对象模型.md:21 有效代码 4 行 < 5
+  ✗ v2.3 R3 docs/课程/24-Python内部/01-名字绑定与对象模型.md:89 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R1 docs/课程/24-Python内部/03-内存与GC.md:80 有效代码 4 行 < 5
+  ✗ v2.3 R1 docs/课程/24-Python内部/04-导入系统.md:21 有效代码 4 行 < 5
+  ✗ v2.3 R2 docs/课程/24-Python内部/04-导入系统.md:21 仅 import/print
+  ✗ v2.3 R1 docs/课程/24-Python内部/04-导入系统.md:44 有效代码 2 行 < 5
+  ✗ v2.3 R1 docs/课程/24-Python内部/04-导入系统.md:52 有效代码 3 行 < 5
+  ✗ v2.3 R2 docs/课程/24-Python内部/04-导入系统.md:52 仅 import/print
+  ✗ v2.3 R1 docs/课程/24-Python内部/04-导入系统.md:61 有效代码 3 行 < 5
+  ✗ v2.3 R3 docs/课程/24-Python内部/04-导入系统.md:76 raises 演示有效代码 2 行 < 3
+  ✗ v2.3 R4 docs/课程/20-性能/02-复杂度与数据结构.md:77 与 docs/课程/20-性能/03-常见优化.md:51 相似度 0.864 >= 0.85
+  ✗ v2.3 R4 docs/课程/22-Web与API/02-FastAPI与Pydantic.md:81 与 docs/课程/22-Web与API/02-FastAPI与Pydantic.md:90 相似度 0.971 >= 0.85
+  ✗ v2.3 R4 docs/课程/22-Web与API/03-测试API.md:56 与 docs/课程/22-Web与API/03-测试API.md:69 相似度 0.949 >= 0.85

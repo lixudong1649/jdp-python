@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import re
 import subprocess
@@ -225,6 +226,16 @@ PYODIDE_FORBIDDEN_IN_RUN = re.compile(
 )
 _CF_IMPORT_RE = re.compile(r"from\s+concurrent\.futures\s+import\s+([^\n#]+)", re.I)
 _CF_IMPORT_ALLOWED = frozenset({"Future", "CancelledError", "TimeoutError"})
+V23_MIN_RUN_EFFECTIVE = 5
+V23_MIN_RAISES_EFFECTIVE = 3
+V23_RUN_SIMILARITY_MAX = 0.85
+_IMPORT_PRINT_LINE_RE = re.compile(
+    r"^(?:import\s+\S+|from\s+\S+\s+import\s+.+|print\s*\(.*\))\s*$"
+)
+_V23_TAUTOLOGY_RE = re.compile(
+    r"\bor\s+True\b|assert\s+True\b",
+    re.I,
+)
 
 
 def _lesson_stage(path: Path) -> int | None:
@@ -337,6 +348,72 @@ def _normalize_code_block(content: str) -> str:
         if line:
             out.append(line)
     return "".join(out)
+
+
+def _effective_code_lines(content: str) -> list[str]:
+    """非空、去掉行尾注释后的代码行（用于 v2.3 R1/R3）。"""
+    lines: list[str] = []
+    for raw in content.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if line:
+            lines.append(line)
+    return lines
+
+
+def _run_block_import_print_only(content: str) -> bool:
+    """有效代码行是否全部为 import/from-import 或 print(...)（v2.3 R2）。"""
+    eff = _effective_code_lines(content)
+    if not eff:
+        return False
+    return all(_IMPORT_PRINT_LINE_RE.match(ln) for ln in eff)
+
+
+def check_v23_weak_run_blocks(blocks: list[Block], report: Report) -> None:
+    """v2.3：阶段 12–24 的 python run 块质量门禁 R1–R5。"""
+    run_blocks: list[Block] = []
+    failures: list[str] = []
+    for b in blocks:
+        stage = _lesson_stage(b.file)
+        if stage is None or stage < V21_STAGE_MIN:
+            continue
+        if b.lang != "python" or "run" not in b.flags:
+            continue
+        run_blocks.append(b)
+        where = f"{rel(b.file)}:{b.line}"
+        n_eff = len(_effective_code_lines(b.content))
+        if "raises" not in b.attrs:
+            if n_eff < V23_MIN_RUN_EFFECTIVE:
+                failures.append(f"v2.3 R1 {where} 有效代码 {n_eff} 行 < {V23_MIN_RUN_EFFECTIVE}")
+            if _run_block_import_print_only(b.content):
+                failures.append(f"v2.3 R2 {where} 仅 import/print")
+        else:
+            if n_eff < V23_MIN_RAISES_EFFECTIVE:
+                failures.append(f"v2.3 R3 {where} raises 演示有效代码 {n_eff} 行 < {V23_MIN_RAISES_EFFECTIVE}")
+        if _V23_TAUTOLOGY_RE.search(b.content):
+            failures.append(f"v2.3 R5 {where} 含恒真断言（or True / assert True）")
+
+    norms: list[tuple[str, str, int]] = []
+    for b in run_blocks:
+        norm = _normalize_code_block(b.content)
+        if norm:
+            norms.append((norm, rel(b.file), b.line))
+    for i in range(len(norms)):
+        for j in range(i + 1, len(norms)):
+            a, b = norms[i][0], norms[j][0]
+            if len(a) < 8 and len(b) < 8:
+                continue
+            ratio = difflib.SequenceMatcher(None, a, b).ratio()
+            if ratio >= V23_RUN_SIMILARITY_MAX:
+                failures.append(
+                    f"v2.3 R4 {norms[i][1]}:{norms[i][2]} 与 {norms[j][1]}:{norms[j][2]} "
+                    f"相似度 {ratio:.3f} >= {V23_RUN_SIMILARITY_MAX}"
+                )
+
+    if failures:
+        for msg in failures:
+            report.fail(msg)
+    else:
+        report.ok("v23_run_quality", "v2.3 弱示例门禁 R1–R5")
 
 
 def _code_for_forbidden_scan(content: str) -> str:
@@ -591,6 +668,7 @@ def main() -> int:
     check_v22_duplicate_text(course_files, report)
     check_v22_duplicate_code_blocks(all_blocks, report)
     check_v22_pyodide_forbidden(all_blocks, report)
+    check_v23_weak_run_blocks(all_blocks, report)
     for f in other_docs:
         check_links(f, report, strict_domains=False)
         if f.name == "课程大纲.md":
@@ -607,7 +685,8 @@ def main() -> int:
               "static": "静态代码语法", "source": "源码副本一致", "structure": "课程结构", "link": "链接",
               "v21_structure": "v2.1 量化结构", "v21_dup": "v2.1 重复行",
               "v22_filler": "v2.2 凑数清零", "v22_dup": "v2.2 正文查重",
-              "v22_code_dup": "v2.2 代码块查重", "v22_pyodide": "v2.2 浏览器块"}
+              "v22_code_dup": "v2.2 代码块查重", "v22_pyodide": "v2.2 浏览器块",
+              "v23_run_quality": "v2.3 弱示例门禁"}
     print("\n通过：")
     for k, label in labels.items():
         if report.counts.get(k):
