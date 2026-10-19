@@ -163,18 +163,18 @@ print("widest utf-8 span", widest, "bytes")
 往返编码应逐个字符长度与字节长度不同（中文、emoji 占多字节），但解码后必须与原文相等；`widest` 指出单条消息最多占多少 UTF-8 字节，这是 `logstats` 假设日志为 UTF-8 文本时的典型跨度。
 
 ```python run raises=TypeError
-user = "a"
-packet = b"b"
-print("types", type(user).__name__, type(packet).__name__)
-print("need explicit encode before concat")
-left_repr = repr(user)
-right_repr = repr(packet)
-print("attempt", left_repr, "+", right_repr)
-print("will raise on next line")
+user = "ab"
+packet = user.encode("utf-8")
+hex_spaced = " ".join(f"{b:02x}" for b in packet)
+safe = packet + b"-trail"
+print("str len", len(user), "utf-8 bytes", len(packet), hex_spaced)
+print("bytes concat ok", safe, "len", len(safe))
+mismatch_types = (type(user).__name__, type(packet).__name__)
+print("types before illegal +", mismatch_types)
 user + packet
 ```
 
-拼接前先打印两侧类型：一边是 `str` 一边是 `bytes`，最后一行的 `+` 会触发 `TypeError`，提醒你在网络/文件边界上显式 `.encode()` 或 `.decode()`，不要指望隐式转换。
+先对 `user` 做 UTF-8 编码得到 `packet`，打印字符数、字节数与十六进制，再演示 `bytes` 与 `bytes` 拼接成功。最后一行把 `str` 与 `bytes` 相加会触发 `TypeError`，说明边界上必须先 `.encode()` 或 `.decode()` 统一类型。
 
 ## 对照
 

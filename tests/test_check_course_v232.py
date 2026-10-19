@@ -45,33 +45,31 @@ class V232R7HelperTest(unittest.TestCase):
 
 
 class V232R7TargetBlocksTest(unittest.TestCase):
-    def test_t1_t2_t3_fail_before_rewrite(self):
+    def test_t1_t2_t3_pass_after_rewrite(self):
         specs = [
             ("docs/课程/19-asyncio/02-gather与TaskGroup.md", 2),
             ("docs/课程/17-打包与发布/03-发布流程.md", 4),
             ("docs/课程/14-文本文件与命令行/01-编码与bytes.md", 9),
         ]
-        failing = []
+        still_weak = []
         for rel_path, index in specs:
             block = nth_python_run_block(ROOT / rel_path, index)
-            if not run_block_fails_v232_r7(block.content):
-                failing.append(f"{rel_path} run#{index}")
-        self.assertEqual(failing, [], "T1–T3 应在 M1 被 R7 命中：\n" + "\n".join(failing))
+            if run_block_fails_v232_r7(block.content):
+                still_weak.append(f"{rel_path} run#{index}")
+        self.assertEqual(still_weak, [], "T1–T3 改写后应通过 R7：\n" + "\n".join(still_weak))
 
     def test_r7_gate_reports_failure(self):
         report = Report()
-        block = nth_python_run_block(
-            ROOT / "docs/课程/17-打包与发布/03-发布流程.md", 4
-        )
+        code = 'print("a")\nprint("b")\nprint("c")\n'
         check_v232_r7_prewritten_prints(
             [
                 Block(
-                    block.file,
-                    block.line,
+                    COURSE / "14-文本文件与命令行" / "01-编码与bytes.md",
+                    1,
                     "python",
                     {"run"},
                     {},
-                    block.content,
+                    code,
                 )
             ],
             report,

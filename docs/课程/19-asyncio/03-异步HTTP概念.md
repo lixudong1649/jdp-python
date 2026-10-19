@@ -80,15 +80,19 @@ async def route(path: str) -> str:
         return await asyncio.to_thread(blocking_read, path)
     return blocking_read(path)
 
-coro = route("/api/x")
-print("route 是协程", inspect.iscoroutine(coro))
-print("to_thread 可用", hasattr(asyncio, "to_thread"))
-print("sleep 是协程函数", inspect.iscoroutinefunction(asyncio.sleep))
+path = "/api/x"
+coro = route(path)
+is_coro = inspect.iscoroutine(coro)
+has_thread = hasattr(asyncio, "to_thread")
+sleep_is_async = inspect.iscoroutinefunction(asyncio.sleep)
+sync_sample = blocking_read(path)
+print("route checks", is_coro, has_thread, sleep_is_async)
+print("sync_read preview", sync_sample, "len", len(sync_sample))
 coro.close()
-print("遗留同步 SDK 应走 to_thread", "避免在 loop 里直接 blocking_read")
+print("offload blocking IO", sync_sample.startswith("sync-read:"))
 ```
 
-`route` 展示推荐形状：在 async 函数里用 `await asyncio.to_thread(...)` 把阻塞读盘/urllib 丢进线程池。课内只创建协程并 `close()`，不启动 loop；输出确认 `to_thread` 与 `asyncio.sleep` 的可等待性质。
+`route` 展示推荐形状：在 async 函数里用 `await asyncio.to_thread(...)` 把阻塞读盘/urllib 丢进线程池。课内只创建协程并 `close()`；打印的 `sync_read preview` 来自真实 `blocking_read`，说明遗留同步 SDK 应经 `to_thread` 卸载而不是在 loop 里直接阻塞。
 
 多个 URL 并发时，常 `gather` 多个 `client.get`，每个带 `timeout`。某一请求挂起不应拖死全部（取决于客户端实现与 `gather` 选项）。
 

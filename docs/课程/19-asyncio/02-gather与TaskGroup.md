@@ -97,30 +97,91 @@ async def main() -> None:
 课内确认当前解释器版本是否满足 TaskGroup（3.11+）：
 
 ```python run
-import asyncio
-import inspect
+def coro_step(name: str, steps: int, fail: bool = False):
+    for i in range(steps):
+        if fail and i == steps - 1:
+            raise RuntimeError(f"{name} boom")
+        yield
+    return name
 
 
-def structured_concurrency_notes():
-    notes = ["gather: 并行 await，结果顺序与参数一致"]
-    if hasattr(asyncio, "TaskGroup"):
-        notes.append("TaskGroup: 子任务失败会取消同组其余任务")
-    notes.append("create_task: 把协程包装成 Task 交给循环")
-    return notes
+def drive_to_end(gen):
+    try:
+        while True:
+            gen.send(None)
+    except StopIteration as e:
+        return "done", e.value
+    except Exception as e:
+        return "failed", type(e).__name__
 
 
-for line in structured_concurrency_notes():
-    print(line)
-print("gather is coroutine fn", asyncio.iscoroutinefunction(asyncio.gather))
-if hasattr(asyncio, "TaskGroup"):
-    params = list(inspect.signature(asyncio.TaskGroup.__init__).parameters)
-    print("TaskGroup.__init__ params", params[:3])
-else:
-    print("TaskGroup missing", "upgrade for structured concurrency")
-print("use TaskGroup when siblings must cancel together", hasattr(asyncio, "TaskGroup"))
+def simulate_gather_fail_fast(factories):
+    gens = [f() for f in factories]
+    labels = ["slow_ok", "fast_fail"]
+    states = {labels[i]: "pending" for i in range(len(gens))}
+    results: dict[str, object] = {}
+    gather_exc = None
+    active = list(enumerate(gens))
+    while active and gather_exc is None:
+        nxt = []
+        for i, g in active:
+            try:
+                g.send(None)
+                nxt.append((i, g))
+            except StopIteration as e:
+                states[labels[i]] = "done"
+                results[labels[i]] = e.value
+            except Exception as e:
+                states[labels[i]] = "failed"
+                gather_exc = type(e).__name__
+        active = nxt
+    while active:
+        nxt = []
+        for i, g in active:
+            try:
+                g.send(None)
+                nxt.append((i, g))
+            except StopIteration as e:
+                states[labels[i]] = "done"
+                results[labels[i]] = e.value
+        active = nxt
+    return states, results, gather_exc
+
+
+def simulate_task_group(factories):
+    labels = ["peer_a", "peer_b"]
+    gens = [f() for f in factories]
+    states = {labels[i]: "pending" for i in range(len(gens))}
+    group_error = None
+    for i, g in enumerate(gens):
+        if group_error:
+            states[labels[i]] = "cancelled"
+            continue
+        status, detail = drive_to_end(g)
+        states[labels[i]] = status
+        if status == "failed":
+            group_error = detail
+            for j in range(i + 1, len(gens)):
+                states[labels[j]] = "cancelled"
+    return states, group_error
+
+
+g_states, g_results, g_err = simulate_gather_fail_fast(
+    [lambda: coro_step("slow_ok", 2), lambda: coro_step("fast_fail", 1, fail=True)]
+)
+tg_states, tg_err = simulate_task_group(
+    [lambda: coro_step("peer_a", 2), lambda: coro_step("peer_b", 1, fail=True)]
+)
+print("gather states", g_states)
+print("gather kept slow_ok result", g_results.get("slow_ok"))
+print("gather propagated", g_err)
+print("taskgroup states", tg_states)
+print("taskgroup error", tg_err)
+print("taskgroup cancelled count", sum(v == "cancelled" for v in tg_states.values()))
+print("gather vs group", g_states["slow_ok"], tg_states["peer_a"])
 ```
 
-`gather` 与 `TaskGroup` 解决不同失败语义：前者默认收集或传播异常，后者强调同组任务同生共死。课内用 `inspect` 看 `TaskGroup` 构造参数，比只打印版本号更能对照文档里的结构化并发模型。
+`simulate_gather_fail_fast` 里 `fast_fail` 先抛错，但 `slow_ok` 仍有机会跑完并被记入 `results`；`simulate_task_group` 在 `peer_b` 失败后把尚未驱动的 `peer_a` 标成 `cancelled`。课内不用 `asyncio.run`，用手写 `send`/`throw` 对照「异常向外传播时兄弟任务是否还能收尾」与「同组取消」的差别。
 
 | API | 并发单元 | 失败行为 |
 |---|---|---|

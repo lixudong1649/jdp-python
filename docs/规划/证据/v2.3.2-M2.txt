@@ -1,0 +1,111 @@
+命令: uv run python tests/check_course.py -k 14-
+      uv run python tests/check_course.py -k 17-
+      uv run python tests/check_course.py -k 19-
+      uv run pytest -q
+      npm --prefix site run verify:pyodide -- 14-
+      npm --prefix site run verify:pyodide -- 17-
+      npm --prefix site run verify:pyodide -- 19-
+开始时间: 2026-10-19 10:21:12 +0800
+---
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 5 个，其他文档 0 个
+
+通过：
+  示例运行: 27
+  练习参考答案通过（浏览器）: 10
+  练习起始代码被判失败: 10
+  静态代码语法: 8
+  课程结构: 4
+  链接: 22
+  v2.1 量化结构: 4
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  v2.3.1 R6 未使用赋值: 1
+  v2.3.2 R7 预写文字打印: 1
+  练习参考答案通过合计: 10（浏览器 10 + 本地 0）
+  （唯一示例 27 个，唯一练习 10 道，解释器 1 个）
+
+全部通过 ✅
+=== 17- ===
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 4 个，其他文档 0 个
+
+通过：
+  示例运行: 14
+  练习参考答案通过（浏览器）: 6
+  练习起始代码被判失败: 6
+  静态代码语法: 3
+  课程结构: 3
+  链接: 24
+  v2.1 量化结构: 3
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  v2.3.1 R6 未使用赋值: 1
+  v2.3.2 R7 预写文字打印: 1
+  练习参考答案通过合计: 6（浏览器 6 + 本地 0）
+  （唯一示例 14 个，唯一练习 6 道，解释器 1 个）
+
+全部通过 ✅
+=== 19- ===
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 4 个，其他文档 0 个
+
+通过：
+  示例运行: 11
+  练习参考答案通过（浏览器）: 6
+  练习起始代码被判失败: 6
+  静态代码语法: 3
+  源码副本一致: 1
+  课程结构: 3
+  链接: 15
+  v2.1 量化结构: 3
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  v2.3.1 R6 未使用赋值: 1
+  v2.3.2 R7 预写文字打印: 1
+  练习参考答案通过合计: 6（浏览器 6 + 本地 0）
+  （唯一示例 11 个，唯一练习 6 道，解释器 1 个）
+
+全部通过 ✅
+=== pytest ===
+.................................................................... [100%]
+68 passed, 5 subtests passed in 0.41s
+=== verify 14- ===
+
+> verify:pyodide
+> node scripts/verify-pyodide.mjs 14-
+
+Pyodide 内 Python 3.14.2；扫描 5 个文件；跳过 local 0 块
+示例通过 27，参考答案通过 10，起始代码被判失败 10
+全部通过 ✅
+=== verify 17- ===
+
+> verify:pyodide
+> node scripts/verify-pyodide.mjs 17-
+
+Pyodide 内 Python 3.14.2；扫描 4 个文件；跳过 local 0 块
+示例通过 14，参考答案通过 6，起始代码被判失败 6
+全部通过 ✅
+=== verify 19- ===
+
+> verify:pyodide
+> node scripts/verify-pyodide.mjs 19-
+
+Pyodide 内 Python 3.14.2；扫描 4 个文件；跳过 local 0 块
+示例通过 11，参考答案通过 6，起始代码被判失败 6
+全部通过 ✅
