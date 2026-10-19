@@ -1,0 +1,90 @@
+开始时间: 2026-10-19 08:22:46 +0800
+=== uv run python tests/check_course.py ===
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 107 个，其他文档 16 个
+
+通过：
+  示例运行: 401
+  练习参考答案通过（浏览器）: 172
+  练习参考答案通过（本地）: 3
+  练习起始代码被判失败: 175
+  静态代码语法: 110
+  源码副本一致: 5
+  课程结构: 81
+  链接: 811
+  v2.1 量化结构: 45
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  练习参考答案通过合计: 175（浏览器 172 + 本地 3）
+  （唯一示例 397 个，唯一练习 175 道，解释器 1 个）
+
+全部通过 ✅
+=== uv run pytest ===
+............................................................        [100%]
+60 passed, 5 subtests passed in 0.28s
+=== uv run ruff check ===
+[1;32mAll checks passed![0m
+=== npm run build ===
+
+> build
+> npm run prepare-assets && vitepress build .
+
+
+> prepare-assets
+> node scripts/prepare-assets.mjs
+
+[prepare-assets] pyodide: 5/5 个文件 -> public/pyodide/
+[prepare-assets] repo: 32 个文件 -> public/repo/
+
+  vitepress v1.6.4
+
+- building client + server bundles...
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[32m✓[0m building client + server bundles...
+- rendering pages...
+[32m✓[0m rendering pages...
+build complete in 12.91s.
+=== time verify ===
+
+> verify
+> python3 ../tests/check_course.py && node scripts/verify-pyodide.mjs
+
+解释器：
+  /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 → Python 3.12.1
+文件：课程 107 个，其他文档 16 个
+
+通过：
+  示例运行: 401
+  练习参考答案通过（浏览器）: 172
+  练习参考答案通过（本地）: 3
+  练习起始代码被判失败: 175
+  静态代码语法: 110
+  源码副本一致: 5
+  课程结构: 81
+  链接: 811
+  v2.1 量化结构: 45
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  练习参考答案通过合计: 175（浏览器 172 + 本地 3）
+  （唯一示例 397 个，唯一练习 175 道，解释器 1 个）
+
+全部通过 ✅
+Pyodide 内 Python 3.14.2；扫描 123 个文件；跳过 local 7 块
+示例通过 397，参考答案通过 172，起始代码被判失败 172
+全部通过 ✅
+real 15.26
+user 33.11
+sys 11.28
