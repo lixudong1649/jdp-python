@@ -71,28 +71,41 @@ def main():
     ...
 ```
 
-课内演示 pdb 命令概念（不真正交互）：
+课内用 `sys.settrace` 模拟 pdb 的逐行停顿（pdb 本身就建立在这个钩子上，这里不进入交互）：
 
 ```python run
+import sys
+
+
 def demo(x: int) -> int:
     y = x + 1
     z = y * 2
     return z
 
-trace = []
-for lineno, line in enumerate(
-    ["def demo(x):", "    y = x + 1", "    z = y * 2", "    return z"],
-    start=1,
-):
-    trace.append((lineno, line.strip()))
-commands = {"n": "next line", "s": "step into", "p variable": "print value"}
-print("would break before line", trace[2][0], trace[2][1])
-for key, meaning in commands.items():
-    print(key, "->", meaning)
-print("demo(3)", demo(3))
+
+first = demo.__code__.co_firstlineno
+steps = []
+
+
+def tracer(frame, event, arg):
+    if frame.f_code is demo.__code__:
+        if event == "line":
+            steps.append((frame.f_lineno - first, dict(frame.f_locals)))
+        return tracer
+    return None
+
+
+sys.settrace(tracer)
+result = demo(3)
+sys.settrace(None)
+for offset, local_vars in steps:
+    print("n -> 函数第", offset, "行，执行前 locals", local_vars)
+stop = next(v for _, v in steps if "y" in v)
+print("停在 z = y * 2 时 p y ->", stop["y"])
+print("demo(3) =", result)
 ```
 
-想象在 `y = x + 1` 行停住：`n` 执行到下一行，`s` 进入调用，`p y` 查看局部变量。课内不启动真实 pdb，但打印的行号与命令表对应调试器提示符里的字母。
+每条 `n ->` 对应一次 `line` 事件，也就是 pdb 里按一次 `n` 停下的位置；打印的 locals 是**这一行执行之前**的局部变量，所以第 1 行只有 `x`，到第 2 行才看得到 `y`。最后一行相当于在 `z = y * 2` 处 `p y`，`s`（step into）则对应 `call` 事件进入被调函数。
 
 在 pytest 里可用 `pytest --pdb` 于失败处进入调试器；日常开发更常用 IDE 断点。
 

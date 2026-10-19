@@ -181,7 +181,7 @@ print("taskgroup cancelled count", sum(v == "cancelled" for v in tg_states.value
 print("gather vs group", g_states["slow_ok"], tg_states["peer_a"])
 ```
 
-`simulate_gather_fail_fast` 里 `fast_fail` 先抛错，但 `slow_ok` 仍有机会跑完并被记入 `results`；`simulate_task_group` 在 `peer_b` 失败后把尚未驱动的 `peer_a` 标成 `cancelled`。课内不用 `asyncio.run`，用手写 `send`/`throw` 对照「异常向外传播时兄弟任务是否还能收尾」与「同组取消」的差别。
+`simulate_gather_fail_fast` 里 `fast_fail` 先抛错，但 `slow_ok` 仍有机会跑完并被记入 `results`；`simulate_task_group` 在 `peer_b` 失败后把尚未驱动的 `peer_a` 标成 `cancelled`。课内不用 `asyncio.run`，用手写 `send` 逐步驱动生成器协程，对照「异常向外传播时兄弟任务是否还能收尾」与「同组取消」的差别。
 
 | API | 并发单元 | 失败行为 |
 |---|---|---|
