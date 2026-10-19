@@ -1,0 +1,34 @@
+命令: uv run python tests/check_course.py
+      uv run pytest -q
+      uv run ruff check
+      cd site && npm run build
+      time perl -e 'alarm 900; exec @ARGV' -- npm --prefix site run verify
+开始时间: 2026-10-19 10:02:41 +0800
+---
+  v2.3.1 R6 未使用赋值: 1
+  练习参考答案通过合计: 175（浏览器 172 + 本地 3）
+  （唯一示例 397 个，唯一练习 175 道，解释器 1 个）
+
+全部通过 ✅
+=== pytest ===
+..............................................................      [100%]
+62 passed, 5 subtests passed in 0.35s
+=== ruff ===
+[1;32mAll checks passed![0m
+=== npm build ===
+- rendering pages...
+[32m✓[0m rendering pages...
+build complete in 13.97s.
+=== verify (timed) ===
+  v2.3 弱示例门禁: 1
+  v2.3.1 R6 未使用赋值: 1
+  练习参考答案通过合计: 175（浏览器 172 + 本地 3）
+  （唯一示例 397 个，唯一练习 175 道，解释器 1 个）
+
+全部通过 ✅
+Pyodide 内 Python 3.14.2；扫描 125 个文件；跳过 local 7 块
+示例通过 397，参考答案通过 172，起始代码被判失败 172
+全部通过 ✅
+real 16.40
+user 34.35
+sys 11.61

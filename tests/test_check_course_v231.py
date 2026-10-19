@@ -1,6 +1,5 @@
 """v2.3.1：R6 未使用赋值与 13 个目标 run 块有效行数回归。"""
 import unittest
-from pathlib import Path
 
 from check_course import (
     ROOT,
