@@ -128,12 +128,20 @@ from pathlib import Path
 
 dist = Path("dist")
 print("dist exists?", dist.exists())
+print("cwd", Path.cwd().name)
 wheel = dist / "logstats_pkg-0.1.0-py3-none-any.whl"
-print("about to read", wheel)
+print("wheel path", wheel)
+if dist.exists():
+    names = sorted(p.name for p in dist.iterdir())
+    print("dist entries", names)
+else:
+    print("dist entries", [])
+print("wheel is_file?", wheel.is_file())
+print("about to read bytes from", wheel.name)
 wheel.read_bytes()
 ```
 
-未跑 `uv build` 时 `dist/*.whl` 不存在；先打印路径与目录状态再 `read_bytes()`，会得到 `FileNotFoundError`，提醒发布前要在本地生成产物。
+未跑 `uv build` 时 `dist/` 往往不存在或没有目标 wheel；先打印目录与路径再 `read_bytes()`，会得到 `FileNotFoundError`，提醒发布前要在本地 `uv build` 生成产物。
 
 课内提醒：构建前目录不存在会报错——先 `uv build`。
 
