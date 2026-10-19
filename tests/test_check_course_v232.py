@@ -3,9 +3,9 @@ import unittest
 
 from check_course import (
     COURSE,
+    ROOT,
     Block,
     Report,
-    ROOT,
     check_v232_r7_prewritten_prints,
     nth_python_run_block,
     prewritten_print_counts,
