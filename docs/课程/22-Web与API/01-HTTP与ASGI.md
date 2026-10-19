@@ -40,12 +40,32 @@ print(HTTPStatus.INTERNAL_SERVER_ERROR.value, classify(500))
 GET 应幂等、无副作用；POST 创建资源；PUT/PATCH 更新。课内用纯数据结构模拟“解析结果”。
 
 ```python run
-def parse_request_line(line: str) -> tuple[str, str]:
-    method, path, _version = line.split()
-    return method, path
+from urllib.parse import unquote
 
-print(parse_request_line("GET /weather/上海 HTTP/1.1"))
+SAMPLES = [
+    "GET /weather/%E4%B8%8A%E6%B5%B7 HTTP/1.1",
+    "POST /reports HTTP/1.1",
+    "DELETE /session/abc HTTP/1.1",
+]
+SAFE = {"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"}
+
+
+def parse_request_line(line: str) -> tuple[str, str, str]:
+    method, raw_path, version = line.split()
+    if method not in SAFE:
+        raise ValueError(f"unsupported method {method}")
+    path = unquote(raw_path)
+    return method, path, version
+
+
+for raw in SAMPLES:
+    method, path, ver = parse_request_line(raw)
+    idempotent = method in {"GET", "HEAD", "PUT", "DELETE"}
+    print(raw)
+    print("  ->", method, path, ver, "幂等/安全读?", idempotent)
 ```
+
+请求行拆成方法、解码后的路径与版本，并标注常见方法是否幂等。浏览器里 `%E4%B8%8A%E6%B5%B7` 会变成可读的中文路径，这与 ASGI `scope["path"]` 里看到的一致。
 
 ### 响应体与 JSON
 
@@ -91,10 +111,18 @@ uv run uvicorn app:app --app-dir examples/项目/22-天气工具API --reload
 - **混淆 WSGI 与 ASGI**：旧 Flask 同步栈是 WSGI；`async def` 路由需要 ASGI 服务器（Uvicorn、Hypercorn）。
 
 ```python run raises=KeyError
-payload = {"city": "上海"}
-# 未检查键直接访问
+payload = {"city": "上海", "updated_at": "2026-10-19T08:00:00Z"}
+required = ("city", "summary", "updated_at")
+print("响应体键", list(payload.keys()))
+for key in required:
+    present = key in payload
+    print(key, "存在?", present)
+missing = [k for k in required if k not in payload]
+print("缺字段", missing, "仍直接取 summary")
 _ = payload["summary"]
 ```
+
+客户端假设 OpenAPI 里声明的 `summary` 一定存在，但后端只回了城市与时间戳；打印键清单后仍用 `payload["summary"]` 会 `KeyError`。生产代码应改用 `.get()` 或 Pydantic 模型校验。
 
 ## 对照
 

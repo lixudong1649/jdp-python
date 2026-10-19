@@ -99,11 +99,21 @@ _ = [x + y for x, y in zip(a, b, strict=True)]
 课内再练一列统计：与 `avg_column` 相同公式，用纯 Python 验证测试期望值。
 
 ```python run
-from statistics import mean
+from statistics import mean, pstdev
 
-temps = [22.0, 18.0]
-print(mean(temps))
+readings = [22.0, 18.0, 25.0, 18.0, 21.0]
+col_mean = mean(readings)
+col_std = pstdev(readings)
+hot = [t for t in readings if t >= col_mean]
+cold = [t for t in readings if t < col_mean]
+print("样本", readings)
+print("列均值", round(col_mean, 2), "总体标准差", round(col_std, 2))
+print("不低于均值的观测", hot, "共", len(hot), "个")
+print("低于均值的观测", cold, "共", len(cold), "个")
+print("若换成 ndarray", "可用 temps.mean() 与布尔索引 temps[temps >= mean]")
 ```
+
+课内用纯 Python 复刻「一列温度 → 均值 → 布尔筛选」管线，输出里同时给出高于/低于均值的子集计数。这与 `ndarray` 上 `mean()`、`std()` 和 `temps[temps >= x]` 的语义一致，只是尚未向量化。
 
 ## 对照
 

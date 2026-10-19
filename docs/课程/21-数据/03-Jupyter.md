@@ -37,13 +37,22 @@ print(state["step"])
 
 ```python run
 RAW = "city,temp\n上海,22\n北京,18\n"
+kernel: dict[str, object] = {"RAW": RAW, "preview": None}
 
-def preview_rows(text: str, n: int = 5) -> list[str]:
-    lines = text.strip().splitlines()[:n]
-    return lines
 
-print(preview_rows(RAW))
+def run_cell(code: str) -> None:
+    exec(code, kernel)
+
+
+run_cell("lines = RAW.strip().splitlines()")
+run_cell("header, *rows = lines")
+run_cell("preview = {'header': header, 'rows': rows[:2], 'total': len(rows)}")
+print("单元 1 后 keys", sorted(k for k in kernel if not k.startswith("_")))
+print("预览", kernel["preview"])
+print("说明", "先定义 RAW 再拆行，顺序与 notebook 从上到下执行一致")
 ```
+
+用 `exec` 模拟三个单元格共享同一内核命名空间：后一个单元格依赖前一个留下的 `lines`。若乱序执行，`header` 尚未定义就会报错，这正是 Jupyter 里「视觉顺序 ≠ 执行顺序」的课内缩影。
 
 ### 与 pandas 静态示例对照
 
@@ -66,12 +75,23 @@ path = Path("examples/项目/21-CSV分析报告/sample.csv")  # 若自建样例
 绘图单元常在 notebook 里 `%matplotlib inline`；交付 CLI 则改为 `savefig` 或把图写入报告目录。课内演示“累积文本输出”：
 
 ```python run
-chunks = ["图1: ", "柱状", " ", "完成\n"]
-report = []
-for c in chunks:
-    report.append(c)
-print("".join(report))
+cells_out: list[str] = []
+
+
+def capture_cell(label: str, pieces: list[str]) -> None:
+    merged = "".join(pieces)
+    cells_out.append(f"[{label}] {merged}")
+    print(merged, end="" if merged.endswith("\n") else "\n")
+
+
+capture_cell("In[1]", ["图1: ", "柱状"])
+capture_cell("In[2]", [" ", "完成\n"])
+print("--- notebook 累积 ---")
+print("".join(cells_out))
+print("单元格数", len(cells_out), "总字符", sum(len(c) for c in cells_out))
 ```
+
+多个单元格各自 `print` 一段，读者在 notebook 里看到的是**按执行顺序拼接**的流式输出；最后一行统计单元格数与总字符，对应导出 HTML/PDF 前检查是否把调试输出清干净。
 
 ### 版本与内核
 

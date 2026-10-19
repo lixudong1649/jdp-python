@@ -54,30 +54,53 @@ assert r.json()["summary"].startswith("晴")
 请求体或查询参数类型不对时，FastAPI 返回 422；课内用函数模拟：
 
 ```python run
-def parse_limit(raw: str) -> int:
-    try:
-        value = int(raw)
-    except ValueError:
-        raise ValueError("invalid")
-    if value < 1:
+def build_search_query(q: str, limit_raw: str) -> dict[str, str | int]:
+    limit = int(limit_raw)
+    if limit < 1:
         raise ValueError("too small")
-    return value
+    if limit > 100:
+        raise ValueError("too large")
+    return {"q": q.strip(), "limit": limit}
 
-assert parse_limit("10") == 10
+
+def fake_get(path: str, params: dict[str, str | int]) -> dict[str, object]:
+    return {"path": path, "params": params, "status": 200}
+
+
+query = build_search_query("  weather  ", "25")
+response = fake_get("/search", query)
+print("构造 query", query)
+print("假 TestClient 响应", response)
+assert response["params"]["limit"] == 25
 ```
+
+测试里先单独验证「查询字符串 → 业务参数字典」，再喂给假 GET；输出包含路径与 status，强调 **422 之前参数解析也可单测**。
 
 ```python run raises=ValueError
 def parse_limit(raw: str) -> int:
+    print("收到 limit 原始值", repr(raw))
     try:
         value = int(raw)
     except ValueError:
+        print("不是十进制整数")
         raise ValueError("invalid")
     if value < 1:
+        print("数值过小", value)
         raise ValueError("too small")
     return value
 
-parse_limit("abc")
+
+for bad in ("abc", "-3", "0"):
+    print("--- 尝试", bad, "---")
+    try:
+        parse_limit(bad)
+    except ValueError as err:
+        print("捕获", err)
+        if bad == "abc":
+            raise
 ```
+
+只对 `"abc"` 让异常继续抛出以满足 `raises=`，前两例在块内捕获并打印错误消息，展示测试应断言**不同失败原因**（invalid vs too small）。
 
 ### 隔离外部依赖
 

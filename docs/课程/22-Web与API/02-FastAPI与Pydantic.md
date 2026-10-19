@@ -79,23 +79,62 @@ def search(q: str = "", limit: int = 10):
 模拟 Pydantic 拒绝非法 `limit`：
 
 ```python run
-def validate_limit(limit: int) -> int:
-    if limit < 1 or limit > 100:
-        raise ValueError("limit out of range")
-    return limit
+from dataclasses import dataclass
 
-print(validate_limit(10))
+
+@dataclass(frozen=True)
+class SearchQuery:
+    q: str
+    limit: int = 10
+
+
+def normalize_search(raw_q: str, raw_limit: int) -> SearchQuery:
+    q = raw_q.strip()
+    if not q:
+        raise ValueError("q must be non-empty")
+    limit = raw_limit if raw_limit >= 1 else 1
+    limit = min(limit, 100)
+    return SearchQuery(q=q, limit=limit)
+
+
+cases = [("  上海  ", 10), ("北京", 0), ("广州", 500)]
+for rq, rl in cases:
+    model = normalize_search(rq, rl)
+    print("输入", repr(rq), rl, "->", model)
 ```
+
+这一段模拟 FastAPI 查询参数进 Pydantic 前的**规范化**：空串拒绝、`limit` 过小抬到 1、过大截到 100。输出展示合法请求与边界被钳制后的模型，而不是重复写同一个 `validate_limit`。
 
 ```python run raises=ValueError
-def validate_limit(limit: int) -> int:
-    if limit < 1 or limit > 100:
-        raise ValueError("limit out of range")
-    return limit
+from dataclasses import dataclass
 
-validate_limit(0)
+
+@dataclass
+class PageParams:
+    offset: int
+    limit: int
+
+
+def parse_page(offset: str, limit: str) -> PageParams:
+    print("原始 query", repr(offset), repr(limit))
+    try:
+        off = int(offset)
+        lim = int(limit)
+    except ValueError as exc:
+        print("整数解析失败", exc)
+        raise ValueError("offset/limit must be integers") from exc
+    if off < 0:
+        raise ValueError("offset negative")
+    if lim < 1 or lim > 100:
+        print("limit 越界", lim)
+        raise ValueError("limit out of range")
+    return PageParams(off, lim)
+
+
+parse_page("0", "abc")
 ```
 
+分页参数里 `limit=abc` 无法转成整数，会先打印原始字符串与 `int` 异常，再包装成 422 风格的 `ValueError`。这与 FastAPI 对非法查询类型的响应不同于「数值越界」那类错误。
 
 ## 易错点
 
