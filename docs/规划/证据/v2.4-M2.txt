@@ -1,0 +1,17 @@
+命令: uv run python tests/check_explain.py --only E03,E04,E05,E06,GOLD && uv run pytest tests/test_explain_core.py -q
+开始时间: 2026-10-20 14:17:38 +0800
+git rev: 4206edc
+---
+命令: uv run python tests/check_explain.py --only E03,E04,E05,E06,GOLD
+exit=0
+
+通过：
+  ✓ E03: minimal_agent 手写表命中 25/22（门槛 ≥20）
+  ✓ E04: AST 节点映射覆盖率 100.0%（未映射 0）
+  ✓ E05: 概念索引 74 条链接校验通过
+  ✓ E06: 12 条规则正反样例全部判对
+  ✓ GOLD: 20 份金标样例比对通过
+---
+命令: uv run pytest tests/test_explain_core.py -q
+exit=0
+79 passed in 0.07s

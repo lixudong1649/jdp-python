@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "pitfalls": [
+    {
+      "rule_id": "none-equality"
+    }
+  ]
+}

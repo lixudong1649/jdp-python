@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "syntax_points": [
+    {
+      "syntax": "dict 字面量",
+      "concept_id": "dict-literal"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "syntax_points": [
+    {
+      "syntax": "列表推导式",
+      "concept_id": "list-comprehension"
+    }
+  ]
+}

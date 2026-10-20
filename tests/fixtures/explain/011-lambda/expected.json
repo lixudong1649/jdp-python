@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "syntax_points": [
+    {
+      "syntax": "lambda",
+      "concept_id": "lambda-expression"
+    }
+  ]
+}

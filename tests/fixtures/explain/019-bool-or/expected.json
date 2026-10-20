@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "syntax_points": [
+    {
+      "syntax": "or 取默认值",
+      "concept_id": "boolean-operator"
+    }
+  ]
+}

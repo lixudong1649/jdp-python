@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "syntax_points": [
+    {
+      "syntax": ":= 海象运算符",
+      "concept_id": "walrus-operator"
+    }
+  ]
+}

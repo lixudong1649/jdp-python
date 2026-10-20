@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "syntax_points": [
+    {
+      "syntax": "class",
+      "concept_id": "class-def"
+    }
+  ]
+}

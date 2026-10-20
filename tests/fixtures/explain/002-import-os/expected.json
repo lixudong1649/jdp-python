@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "syntax_points": [
+    {
+      "syntax": "import",
+      "concept_id": "import-statement"
+    }
+  ]
+}

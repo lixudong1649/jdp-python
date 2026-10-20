@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "syntax_points": [
+    {
+      "syntax": "try",
+      "concept_id": "try-statement"
+    }
+  ],
+  "pitfalls": [
+    {
+      "rule_id": "except-pass"
+    }
+  ]
+}
