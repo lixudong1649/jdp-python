@@ -2,7 +2,14 @@
 // 用法：先启动站点（npm run preview），再执行 `npm run smoke`；
 // 可选环境变量：SMOKE_URL（默认由 JDP_PYTHON_SITE_PORT / PORT 推导）、CHROME_PATH（浏览器可执行文件）。
 import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
+import { loadCourse } from '../.vitepress/lib/course.mjs'
+
+const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const projectRoot = path.resolve(siteRoot, '..')
+const expectedStageCount = loadCourse(path.join(projectRoot, 'docs')).length
 
 const sitePort = process.env.SERVER_PORT || process.env.PORT || process.env.JDP_PYTHON_SITE_PORT || 5180
 const BASE = process.env.SMOKE_URL || `http://127.0.0.1:${sitePort}`
@@ -43,11 +50,11 @@ const lesson = (p) => `${BASE}/${encodeURI(p)}`
 
 console.log(`冒烟测试：${BASE}（${executablePath}）`)
 
-await step('首页路线图渲染 11 个阶段', async () => {
+await step(`首页路线图渲染 ${expectedStageCount} 个阶段`, async () => {
   await page.goto(BASE + '/', { waitUntil: 'networkidle' })
   await page.waitForSelector('.roadmap-card')
   const n = await page.locator('.roadmap-card').count()
-  if (n !== 11) throw new Error(`阶段卡片数 ${n}`)
+  if (n !== expectedStageCount) throw new Error(`阶段卡片数 ${n}，期望 ${expectedStageCount}`)
 })
 
 await step('示例代码块在 Pyodide 中运行并输出', async () => {
