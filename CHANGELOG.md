@@ -1,5 +1,12 @@
 # 更新记录
 
+## 2026-10-20（v2.4）
+
+- 新增：`site/public/py-explain.py` 与 `py-explain.schema.json`；浏览器 Pyodide 与 CPython 共用 AST 分析器（6 栏 JSON）。
+- 新增：`docs/代码解读/index.md`、`概念索引.md`（74 概念）；`CodeExplainer.vue` 四种输入；课程 `PyRunner`「解读」按钮（sessionStorage 传码）。
+- 新增：`scripts/explain_server.py`（本机 `/v1/health`、`/v1/explain`）、`scripts/dev.sh explain`；`tests/check_explain.py` 与 `evals/code-explain-v1.jsonl`（20 题）。
+- 修订：导航/侧边栏入口、冒烟测试、`.env.example` 中 `JDP_PYTHON_EXPLAIN_*` 变量名。
+
 ## 2026-10-18（v2.1）
 
 - 深化：阶段 12–24 共 45 课重写至 v1 水准（正文均值约 200 行、多示例与双练习）；删除课程生成脚本。

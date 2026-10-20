@@ -30,7 +30,7 @@ docs/
   课程大纲.md                  课程定位、与官方教程对比、各阶段课时与目标
   课程/                        课程正文：NN-阶段/NN-课.md，每阶段含 index.md 导读；附录/ 含速查表、术语表
   Python概览与环境.md          Python 特点、版本现状、环境概念与 uv 用法
-  代码解读/minimal_agent.md    minimal_agent.py 逐段语法解读
+  代码解读/                    浏览器内代码解读页（index.md）与概念索引、minimal_agent 速查
   项目架构与技术栈.md          目录职责、运行机制、技术栈版本与命令
   关于.md                      作者与联系、许可、声明、第三方组件
 examples/
@@ -61,6 +61,7 @@ uv run examples/agent/minimal_agent.py    # 运行最小 Agent 示例
 参考：
 
 - [Python 概览与环境](docs/Python概览与环境.md)：Python 是什么、版本现状、uv 环境
+- [代码解读](docs/代码解读/index.md)：粘贴或选择 Python 代码，浏览器内分析语法、结构、运行方式与易错点（本机可选 AI 讲解）
 - [读懂 minimal_agent.py](docs/代码解读/minimal_agent.md)：示例代码逐段解读（课程中的逐行精读见 [11.1](docs/课程/11-简单项目/01-minimal_agent逐行精读.md)）
 - [examples/agent](examples/agent/index.md)：最小 Agent 循环的原理、运行与验证结果
 

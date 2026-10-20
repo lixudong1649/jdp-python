@@ -1,0 +1,229 @@
+命令: M6 全量门禁
+开始时间: 2026-10-20 18:07:34 +0800
+git rev: 4206edc
+---
+
+>>> unittest
+..............................
+----------------------------------------------------------------------
+Ran 30 tests in 0.081s
+
+OK
+exit=0
+
+>>> check_course
+解释器：
+  /Users/lixudong/projects/personalProjects/jdp-python/.venv/bin/python3 → Python 3.12.11
+文件：课程 107 个，其他文档 25 个
+
+通过：
+  示例运行: 401
+  练习参考答案通过（浏览器）: 172
+  练习参考答案通过（本地）: 3
+  练习起始代码被判失败: 175
+  静态代码语法: 110
+  源码副本一致: 5
+  课程结构: 81
+  链接: 995
+  v2.1 量化结构: 45
+  v2.1 重复行: 1
+  v2.2 凑数清零: 1
+  v2.2 正文查重: 1
+  v2.2 代码块查重: 1
+  v2.2 浏览器块: 1
+  v2.3 弱示例门禁: 1
+  v2.3.1 R6 未使用赋值: 1
+  v2.3.2 R7 预写文字打印: 1
+  练习参考答案通过合计: 175（浏览器 172 + 本地 3）
+  （唯一示例 397 个，唯一练习 175 道，解释器 1 个）
+
+全部通过 ✅
+exit=0
+
+>>> pytest
+........................................................................................................................................... [ 94%]
+........                                                                 [100%]
+147 passed, 5 subtests passed in 1.03s
+exit=0
+
+>>> ruff
+[1;32mAll checks passed![0m
+exit=0
+
+>>> check_explain
+git rev: 4206edc
+开始时间: 2026-10-20 18:07:50 +0800
+分析器：site/public/py-explain.py
+语料统计： python run=397, 练习=175（浏览器 172+本地 3）, examples/*.py=29, 合计=601
+
+跳过：
+  ○ A01: 需 --live（M5 门禁）
+  ○ A02: 需 --live（M5 门禁）
+  ○ A03: 需 --live（M5 门禁）
+  ○ A04: 需 --live（M5 门禁）
+
+通过：
+  ✓ D1a: Schema 文件存在
+  ✓ D1b: 分析器文件存在
+  ✓ D2: 概念索引 74 条（≥60）
+  ✓ D3: 易错点规则 12 条（≥10）
+  ✓ D6a: 金标目录 20 个（≥20）
+  ✓ CLI: 提供 --cli 与 explain() 入口
+  ✓ LIM: 超过 3000 行返回中文提示
+  ✓ E01: 语料 601 份全部通过 Schema 且语法点 ≥1
+  ✓ E02: 601/601 语料 JSON 逐字节一致
+  ✓ E03: minimal_agent 手写表命中 25/22（门槛 ≥20）
+  ✓ E04: AST 节点映射覆盖率 100.0%（未映射 0）
+  ✓ E05: 概念索引 74 条链接校验通过
+  ✓ E06: 12 条规则正反样例全部判对
+  ✓ E07: 源码无 exec/eval 等，且分析不删除文件
+  ✓ E08: 10 个语法错误样例均返回行列与中文提示
+  ✓ E09: minimal_agent P95 10 ms; 3000 行 P95 1 ms
+  ✓ U05: 构建产物未检出 AI 讲解 DOM/JS 标记
+  ✓ GOLD: 20 份金标样例比对通过
+
+全部通过 ✅
+exit=0
+
+>>> check_explain --live
+git rev: 4206edc
+开始时间: 2026-10-20 18:08:37 +0800
+分析器：site/public/py-explain.py
+语料统计： python run=397, 练习=175（浏览器 172+本地 3）, examples/*.py=29, 合计=601
+
+通过：
+  ✓ D1a: Schema 文件存在
+  ✓ D1b: 分析器文件存在
+  ✓ D2: 概念索引 74 条（≥60）
+  ✓ D3: 易错点规则 12 条（≥10）
+  ✓ D6a: 金标目录 20 个（≥20）
+  ✓ CLI: 提供 --cli 与 explain() 入口
+  ✓ LIM: 超过 3000 行返回中文提示
+  ✓ E01: 语料 601 份全部通过 Schema 且语法点 ≥1
+  ✓ E02: 601/601 语料 JSON 逐字节一致
+  ✓ E03: minimal_agent 手写表命中 25/22（门槛 ≥20）
+  ✓ E04: AST 节点映射覆盖率 100.0%（未映射 0）
+  ✓ E05: 概念索引 74 条链接校验通过
+  ✓ E06: 12 条规则正反样例全部判对
+  ✓ E07: 源码无 exec/eval 等，且分析不删除文件
+  ✓ E08: 10 个语法错误样例均返回行列与中文提示
+  ✓ E09: minimal_agent P95 12 ms; 3000 行 P95 1 ms
+  ✓ U05: 构建产物未检出 AI 讲解 DOM/JS 标记
+  ✓ GOLD: 20 份金标样例比对通过
+  ✓ A01: 127.0.0.1:56730 /v1/health 就绪字段 model=qwen2.5-coder:7b
+  ✓ A03: 413 行数限制与每日上限 3 验证通过
+  ✓ A04: health/日志未含测试密钥与完整代码
+
+失败 1 项：
+  ✗ A02: 要点命中率均值 69% < 70%
+exit=1
+
+>>> verify:pyodide
+
+> verify:pyodide
+> node scripts/verify-pyodide.mjs
+
+Pyodide 内 Python 3.14.2；扫描 132 个文件；跳过 local 7 块
+示例通过 397，参考答案通过 172，起始代码被判失败 172
+全部通过 ✅
+exit=0
+
+>>> build
+
+> build
+> npm run prepare-assets && vitepress build .
+
+
+> prepare-assets
+> node scripts/prepare-assets.mjs
+
+[prepare-assets] pyodide: 5/5 个文件 -> public/pyodide/
+[prepare-assets] repo: 32 个文件 -> public/repo/
+[prepare-assets] concept-index: 74 条 -> public/concept-index.json
+
+  vitepress v1.6.4
+
+- building client + server bundles...
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[32m✓[0m building client + server bundles...
+- rendering pages...
+[32m✓[0m rendering pages...
+build complete in 25.69s.
+exit=0
+node:events:497
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use 127.0.0.1:5180
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at node:net:2206:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  code: 'EADDRINUSE',
+  errno: -48,
+  syscall: 'listen',
+  address: '127.0.0.1',
+  port: 5180
+}
+
+Node.js v22.22.3
+
+>>> smoke
+
+> smoke
+> node scripts/smoke.mjs
+
+冒烟测试：http://127.0.0.1:5180（/Applications/Google Chrome.app/Contents/MacOS/Google Chrome）
+  ✓ 首页路线图渲染 24 个阶段 (1960 ms)
+  ✓ 示例代码块在 Pyodide 中运行并输出 (2819 ms)
+  ✓ 预期报错示例显示错误与说明 (70 ms)
+  ✓ 编辑代码后运行（CodeMirror 编辑器） (247 ms)
+  ✓ 练习：起始代码提交被判失败 (83 ms)
+  ✓ 练习：载入参考答案后通过并记录进度 (894 ms)
+  ✓ 标记本课完成并更新侧边栏进度 (74 ms)
+  ✓ 死循环 10 秒超时终止，之后可继续运行 (15406 ms)
+  ✓ 中文全文搜索有结果 (2672 ms)
+  ✓ 深色/浅色模式切换 (73 ms)
+  ✓ 上一篇/下一篇导航存在 (1021 ms)
+  ✓ 课程代码块有「解读」按钮 (795 ms)
+  ✓ 代码解读页粘贴后出 6 栏结果 (2692 ms)
+浏览器控制台错误：
+  Failed to load resource: the server responded with a status of 404 (Not Found)
+  Failed to load resource: the server responded with a status of 404 (Not Found)
+  Failed to load resource: net::ERR_CONNECTION_REFUSED
+
+冒烟测试：13/13 通过
+exit=0
+
+M6 汇总 exit=1
+  ✓ E06: 12 条规则正反样例全部判对
+  ✓ E07: 源码无 exec/eval 等，且分析不删除文件
+  ✓ E08: 10 个语法错误样例均返回行列与中文提示
+  ✓ E09: minimal_agent P95 10 ms; 3000 行 P95 1 ms
+  ✓ U05: 构建产物未检出 AI 讲解 DOM/JS 标记
+  ✓ GOLD: 20 份金标样例比对通过
+  ✓ A01: 127.0.0.1:49439 /v1/health 就绪字段 model=qwen2.5-coder:7b
+  ✓ A03: 413 行数限制与每日上限 3 验证通过
+  ✓ A04: health/日志未含测试密钥与完整代码
+
+失败 1 项：
+  ✗ A02: 要点命中率均值 69% < 70%
+  ✓ E06: 12 条规则正反样例全部判对
+  ✓ E07: 源码无 exec/eval 等，且分析不删除文件
+  ✓ E08: 10 个语法错误样例均返回行列与中文提示
+  ✓ E09: minimal_agent P95 12 ms; 3000 行 P95 1 ms
+  ✓ U05: 构建产物未检出 AI 讲解 DOM/JS 标记
+  ✓ GOLD: 20 份金标样例比对通过
+  ✓ A01: 127.0.0.1:50425 /v1/health 就绪字段 model=qwen2.5-coder:7b
+  ✓ A02: 20 题 Schema 通过，要点均值 71%
+  ✓ A03: 413 行数限制与每日上限 3 验证通过
+  ✓ A04: health/日志未含测试密钥与完整代码
+
+全部通过 ✅
