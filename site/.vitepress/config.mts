@@ -70,6 +70,7 @@ export default defineConfig({
       { text: '开始学习', link: stages[0]?.lessons[0]?.link || '/' },
       { text: '速查表', link: '/课程/附录/速查表' },
       { text: '术语表', link: '/课程/附录/术语表' },
+      { text: '代码解读', link: '/代码解读/' },
       { text: '项目', items: [
         { text: '项目架构与技术栈', link: '/项目架构与技术栈' },
         { text: '关于与声明', link: '/关于' },

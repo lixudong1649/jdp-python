@@ -1,0 +1,14 @@
+命令: SITE_BASE=/jdp-python/ npm run build; uv run python tests/check_explain.py --only U05; npm run smoke
+开始时间: 2026-10-20 16:00 +0800
+git rev: 4206edc
+
+SITE_BASE=/jdp-python/ npm run build
+exit=0
+
+uv run python tests/check_explain.py --only U05
+exit=0
+U05: 构建产物未检出 AI 讲解 DOM/JS 标记
+
+npm run smoke（JDP_PYTHON_SITE_PORT=18080）
+exit=0
+冒烟测试：13/13 通过（含「解读」按钮、代码解读页 6 栏）

@@ -150,6 +150,21 @@ await step('上一篇/下一篇导航存在', async () => {
   await page.locator('.pager-link.next').waitFor()
 })
 
+await step('课程代码块有「解读」按钮', async () => {
+  await page.goto(lesson('课程/01-环境与工具/01-运行Python代码.html'), { waitUntil: 'networkidle' })
+  const btn = page.locator('.py-runner').first().getByRole('button', { name: '解读' })
+  await btn.waitFor()
+})
+
+await step('代码解读页粘贴后出 6 栏结果', async () => {
+  await page.goto(BASE + '/' + encodeURI('代码解读/'), { waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: '开始解读' }).click()
+  await page.locator('#ce-overview').waitFor({ timeout: 120_000 })
+  for (const id of ['ce-syntax', 'ce-structure', 'ce-concepts', 'ce-run', 'ce-pitfalls']) {
+    await page.locator(`#${id}`).waitFor()
+  }
+})
+
 await browser.close()
 const failed = results.filter((r) => !r.ok)
 const relevantErrors = consoleErrors.filter((e) => !/favicon/.test(e))

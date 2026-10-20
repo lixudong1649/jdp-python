@@ -2,7 +2,9 @@
 import { computed, ref } from 'vue'
 import CodeEditor from './CodeEditor.vue'
 import RunOutput from './RunOutput.vue'
+import { withBase } from 'vitepress'
 import { b64decode, runPython, warmup, status, runtimeInfo, type RunResult } from '../pyodide-client'
+import { storeExplainCode } from '../explain-storage'
 
 const props = defineProps<{ code: string; raises?: string }>()
 const original = b64decode(props.code)
@@ -22,6 +24,10 @@ function reset() {
   result.value = null
   editing.value = false
 }
+function goExplain() {
+  const key = storeExplainCode(source.value)
+  window.location.href = withBase(`/代码解读/?k=${encodeURIComponent(key)}`)
+}
 </script>
 
 <template>
@@ -33,6 +39,7 @@ function reset() {
       <span v-if="status === 'loading'" class="py-status">正在加载 Python 运行时…</span>
       <button class="py-btn" @click="editing = !editing">{{ editing ? '收起编辑器' : '编辑' }}</button>
       <button class="py-btn" :disabled="!modified && !result" @click="reset">重置</button>
+      <button type="button" class="py-btn" @click="goExplain">解读</button>
       <button class="py-btn py-btn-primary" :disabled="running" @pointerenter="warmup" @click="run">▶ 运行</button>
     </div>
     <CodeEditor v-if="editing" v-model="source" :min-lines="3" @run="run" @focus="warmup" />

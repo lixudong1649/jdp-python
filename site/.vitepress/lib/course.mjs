@@ -59,7 +59,8 @@ export function buildSidebar(stages, srcDir) {
     { text: '速查表', link: '/课程/附录/速查表' },
     { text: '术语表', link: '/课程/附录/术语表' },
     { text: 'minimal_agent.py 语法速查', link: '/代码解读/minimal_agent' },
-  ].filter((i) => exists(i.link.slice(1) + '.md'))
+    { text: '代码解读', link: '/代码解读/' },
+  ].filter((i) => exists(i.link.slice(1) + (i.link.endsWith('/') ? 'index.md' : '.md')))
   const project = [
     { text: '项目架构与技术栈', link: '/项目架构与技术栈' },
     { text: '关于与声明', link: '/关于' },

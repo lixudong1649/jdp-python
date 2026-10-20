@@ -8,6 +8,7 @@ import CourseRoadmap from './components/CourseRoadmap.vue'
 import LessonFooter from './components/LessonFooter.vue'
 import SidebarProgress from './components/SidebarProgress.vue'
 import SiteCopyright from './components/SiteCopyright.vue'
+import CodeExplainer from './components/CodeExplainer.vue'
 import './style.css'
 
 export default {
@@ -23,5 +24,6 @@ export default {
     app.component('PyLocalCode', PyLocalCode)
     app.component('PyExercise', PyExercise)
     app.component('CourseRoadmap', CourseRoadmap)
+    app.component('CodeExplainer', CodeExplainer)
   },
 } satisfies Theme

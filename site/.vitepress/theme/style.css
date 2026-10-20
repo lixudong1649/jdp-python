@@ -78,6 +78,29 @@
 }
 .lesson-footer.done { border-color: var(--vp-c-green-2); background: var(--vp-c-green-soft); }
 
+/* ---------- 代码解读页 ---------- */
+.code-explainer { margin: 8px 0 32px; }
+.ce-inputs { border: 1px solid var(--vp-c-divider); border-radius: 10px; padding: 14px; background: var(--vp-c-bg-soft); }
+.ce-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; font-size: 14px; }
+.ce-field label { font-weight: 600; color: var(--vp-c-text-2); }
+.ce-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+.ce-grow { flex: 1; min-width: 220px; }
+.ce-select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--vp-c-divider); background: var(--vp-c-bg); max-width: 100%; }
+.ce-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.ce-error { margin: 16px 0; padding: 12px 14px; border-radius: 8px; background: var(--vp-c-danger-soft); color: var(--vp-c-danger-1); }
+.ce-section { margin-top: 28px; }
+.ce-section h2 { font-size: 1.15rem; margin-bottom: 10px; border-bottom: 1px solid var(--vp-c-divider); padding-bottom: 6px; }
+.ce-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ce-table th, .ce-table td { border: 1px solid var(--vp-c-divider); padding: 6px 8px; text-align: left; vertical-align: top; }
+.ce-list { padding-left: 1.2rem; line-height: 1.65; }
+.ce-links a { margin-left: 8px; font-size: 12px; }
+.ce-llm-out { border: 1px dashed var(--vp-c-brand-soft); padding: 12px; border-radius: 8px; }
+.ce-llm-pre { white-space: pre-wrap; font-size: 13px; line-height: 1.6; margin: 0; }
+@media (max-width: 390px) {
+  .ce-table { display: block; overflow-x: auto; }
+  .code-explainer { overflow-x: hidden; }
+}
+
 /* ---------- 首页路线图 ---------- */
 .roadmap { max-width: 1152px; margin: 0 auto; padding: 8px 0 32px; }
 .roadmap-summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
