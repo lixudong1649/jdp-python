@@ -4,6 +4,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { writeConceptIndexAssets } from '../.vitepress/lib/concept-index.mjs'
 
 const site = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const project = path.resolve(site, '..')
@@ -42,3 +43,5 @@ const walk = (rel) => {
 if (fs.existsSync(path.join(project, 'examples'))) walk('examples')
 for (const f of ['README.md', 'pyproject.toml']) n += copyText(f)
 console.log(`[prepare-assets] repo: ${n} 个文件 -> public/repo/`)
+const conceptN = writeConceptIndexAssets(project, path.join(site, 'public'))
+console.log(`[prepare-assets] concept-index: ${conceptN} 条 -> public/concept-index.json`)

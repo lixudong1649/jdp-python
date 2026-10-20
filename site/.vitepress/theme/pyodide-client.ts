@@ -43,6 +43,12 @@ function spawn(): Worker {
       pending.delete(data.id)
       const { type, id, ...rest } = data
       p.resolve(rest as RunResult)
+    } else if (data.type === 'explain-result') {
+      const p = explainPending.get(data.id)
+      if (!p) return
+      clearTimeout(p.timer)
+      explainPending.delete(data.id)
+      p.resolve(data.result as ExplainResult)
     }
   }
   w.onerror = (e) => {
@@ -74,12 +80,39 @@ export function warmup() {
   if (!worker) worker = spawn()
 }
 
+export interface ExplainResult {
+  ok: boolean
+  overview?: Record<string, unknown>
+  syntax_points?: unknown[]
+  structure?: unknown[]
+  concepts?: unknown[]
+  run_info?: Record<string, unknown>
+  pitfalls?: unknown[]
+  error?: { line: number; column: number; message: string }
+}
+
+const EXPLAIN_TIMEOUT_MS = 60_000
+const explainPending = new Map<number, { resolve: (r: ExplainResult) => void; timer?: number }>()
+
 export function runPython(code: string, check = ''): Promise<RunResult> {
   if (!worker) worker = spawn()
   const id = ++seq
   return new Promise((resolve) => {
     pending.set(id, { resolve })
     worker!.postMessage({ type: 'run', id, code, check })
+  })
+}
+
+export function explainPython(code: string, filename = '<input>'): Promise<ExplainResult> {
+  if (!worker) worker = spawn()
+  const id = ++seq
+  return new Promise((resolve) => {
+    const timer = window.setTimeout(() => {
+      explainPending.delete(id)
+      resolve({ ok: false, error: { line: 1, column: 0, message: '分析超时，请缩短代码后重试' } })
+    }, EXPLAIN_TIMEOUT_MS)
+    explainPending.set(id, { resolve, timer })
+    worker!.postMessage({ type: 'explain', id, code, filename })
   })
 }
 

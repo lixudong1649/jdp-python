@@ -1,0 +1,12 @@
+命令: cd site && npm run build; uv run python tests/check_explain.py --only E02,E09
+开始时间: 2026-10-20 15:58 +0800
+git rev: 4206edc
+
+npm run build
+exit=0
+（详见 v2.4-M3-build.log）
+
+uv run python tests/check_explain.py --only E02,E09
+exit=0
+E02: 601/601 语料 JSON 逐字节一致
+E09: minimal_agent P95 10 ms; 3000 行 P95 1 ms

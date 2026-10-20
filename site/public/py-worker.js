@@ -17,8 +17,19 @@ async function boot() {
   const py = await mod.loadPyodide({ indexURL })
   const helper = await (await fetch(new URL(base + 'py-runtime.py', self.location.origin))).text()
   py.runPython(helper)
+  const explainSrc = await (await fetch(new URL(base + 'py-explain.py', self.location.origin))).text()
+  py.runPython(explainSrc)
+  try {
+    const conceptMd = await (await fetch(new URL(base + 'concept-index.md', self.location.origin))).text()
+    py.FS.writeFile('/concept-index.md', conceptMd)
+    py.runPython("configure('/concept-index.md')")
+  } catch (_) {
+    /* 概念索引可选 */
+  }
   const version = py.runPython('import sys; sys.version.split()[0]')
-  return { py, run: py.globals.get('course_run'), source, version }
+  const run = py.globals.get('course_run')
+  const explainFn = py.globals.get('course_explain')
+  return { py, run, explainFn, source, version }
 }
 
 const ready = boot()
@@ -28,15 +39,32 @@ ready.then(
 )
 
 self.onmessage = async ({ data }) => {
-  if (data.type !== 'run') return
-  const { run } = await ready
-  postMessage({ type: 'start', id: data.id })
-  try {
-    const res = run(data.code, data.check || '')
-    const obj = res.toJs({ dict_converter: Object.fromEntries })
-    res.destroy()
-    postMessage({ type: 'result', id: data.id, ...obj })
-  } catch (e) {
-    postMessage({ type: 'result', id: data.id, ok: false, out: '', err: String(e && e.message || e), phase: 'runtime' })
+  const ctx = await ready
+  if (data.type === 'run') {
+    postMessage({ type: 'start', id: data.id })
+    try {
+      const res = ctx.run(data.code, data.check || '')
+      const obj = res.toJs({ dict_converter: Object.fromEntries })
+      res.destroy()
+      postMessage({ type: 'result', id: data.id, ...obj })
+    } catch (e) {
+      postMessage({ type: 'result', id: data.id, ok: false, out: '', err: String(e && e.message || e), phase: 'runtime' })
+    }
+    return
+  }
+  if (data.type === 'explain') {
+    postMessage({ type: 'start', id: data.id })
+    try {
+      const res = ctx.explainFn(data.code, data.filename || '<input>')
+      const obj = res.toJs({ dict_converter: Object.fromEntries })
+      res.destroy()
+      postMessage({ type: 'explain-result', id: data.id, result: obj })
+    } catch (e) {
+      postMessage({
+        type: 'explain-result',
+        id: data.id,
+        result: { ok: false, error: { line: 1, column: 0, message: String(e && e.message || e) } },
+      })
+    }
   }
 }
