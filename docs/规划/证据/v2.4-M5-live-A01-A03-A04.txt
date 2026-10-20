@@ -1,0 +1,37 @@
+命令: uv run python tests/check_explain.py --live --only A01,A03,A04
+开始时间: 2026-10-20 18:01:24 +0800
+git rev: 4206edc
+---
+### --only A01 ###
+git rev: 4206edc
+开始时间: 2026-10-20 18:01:24 +0800
+分析器：site/public/py-explain.py
+语料统计： python run=397, 练习=175（浏览器 172+本地 3）, examples/*.py=29, 合计=601
+
+通过：
+  ✓ A01: 127.0.0.1:52778 /v1/health 就绪字段 model=qwen2.5-coder:7b
+
+全部通过 ✅
+exit=0
+### --only A03 ###
+git rev: 4206edc
+开始时间: 2026-10-20 18:01:25 +0800
+分析器：site/public/py-explain.py
+语料统计： python run=397, 练习=175（浏览器 172+本地 3）, examples/*.py=29, 合计=601
+
+通过：
+  ✓ A03: 413 行数限制与每日上限 3 验证通过
+
+全部通过 ✅
+exit=0
+### --only A04 ###
+git rev: 4206edc
+开始时间: 2026-10-20 18:01:26 +0800
+分析器：site/public/py-explain.py
+语料统计： python run=397, 练习=175（浏览器 172+本地 3）, examples/*.py=29, 合计=601
+
+通过：
+  ✓ A04: health/日志未含测试密钥与完整代码
+
+全部通过 ✅
+exit=0

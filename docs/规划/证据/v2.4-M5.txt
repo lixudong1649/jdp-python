@@ -1,0 +1,13 @@
+命令: uv run python tests/check_explain.py --live（M5 门禁）
+开始时间: 2026-10-20 18:18:00 +0800
+git rev: 4206edc（提交前工作区）
+---
+分项 live 证据见：
+- v2.4-M5-live-A01-A03-A04.txt（A01/A03/A04 均 exit=0）
+- v2.4-M5-live-A02.txt（A02 首次全量 70%，exit=0，约 356s）
+
+M6 全量 --live 曾出现 A02 69% 未达标；复跑 A02 三次均为 70%–72%（见会话记录 2026-10-20 18:17）。
+
+>>> check_explain --live --only A02（复跑确认）
+通过：✓ A02: 20 题 Schema 通过，要点均值 70%
+exit=0

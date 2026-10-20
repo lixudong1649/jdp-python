@@ -3,6 +3,7 @@
 # 登记端口：site ${JDP_PYTHON_SITE_PORT:-5180}（id：jdp-python.site）
 #
 # 用法：scripts/dev.sh start|stop|status|restart|logs
+#       scripts/dev.sh explain start|stop|status
 # 可选：JDP_PYTHON_SITE_MODE=preview（默认 dev）；start 时可用 --preview
 set -euo pipefail
 
@@ -25,6 +26,9 @@ export JDP_PYTHON_SITE_PORT SITE_PORT HOST PORT="${SITE_PORT}"
 
 SITE_PID_FILE="${run_dir}/site.pid"
 SITE_LOG="${log_dir}/site.log"
+EXPLAIN_PID_FILE="${run_dir}/explain.pid"
+EXPLAIN_LOG="${log_dir}/explain.log"
+JDP_PYTHON_EXPLAIN_PORT="${JDP_PYTHON_EXPLAIN_PORT:-8031}"
 
 port_pids() {
   lsof -ti tcp:"$1" -sTCP:LISTEN 2>/dev/null | sort -u || true
@@ -329,6 +333,45 @@ cmd_logs() {
   exec tail -f "${SITE_LOG}"
 }
 
+start_explain() {
+  if try_skip_from_pid_file "${EXPLAIN_PID_FILE}" "jdp-python AI 讲解"; then
+    return 0
+  fi
+  ensure_dirs
+  : >"${EXPLAIN_LOG}"
+  (
+    cd "${project_dir}"
+    nohup env JDP_PYTHON_EXPLAIN_PORT="${JDP_PYTHON_EXPLAIN_PORT}" \
+      uv run python scripts/explain_server.py >>"${EXPLAIN_LOG}" 2>&1 &
+    echo $! >"${EXPLAIN_PID_FILE}"
+  )
+  if ! wait_port_listen "${JDP_PYTHON_EXPLAIN_PORT}" "jdp-python AI 讲解" "${EXPLAIN_LOG}"; then
+    return 1
+  fi
+  echo "jdp-python AI 讲解：http://127.0.0.1:${JDP_PYTHON_EXPLAIN_PORT}/v1/health"
+}
+
+cmd_explain() {
+  local sub="${1:-status}"
+  shift || true
+  case "${sub}" in
+    start) start_explain ;;
+    stop) stop_service "jdp-python AI 讲解" "${JDP_PYTHON_EXPLAIN_PORT}" "${EXPLAIN_PID_FILE}" ;;
+    status)
+      local listen listeners state primary_pid
+      if port_is_listening "${JDP_PYTHON_EXPLAIN_PORT}"; then listen="是"; listeners="$(port_pids "${JDP_PYTHON_EXPLAIN_PORT}" | tr '\n' ',' | sed 's/,$//')"; else listen="否"; listeners="-"; fi
+      state="$(pid_file_state "${EXPLAIN_PID_FILE}" "${JDP_PYTHON_EXPLAIN_PORT}")"
+      primary_pid="-"
+      [[ -f "${EXPLAIN_PID_FILE}" ]] && primary_pid="$(<"${EXPLAIN_PID_FILE}")"
+      echo "jdp-python AI 讲解: 端口 ${JDP_PYTHON_EXPLAIN_PORT} | 监听: ${listen} | 监听 PID: ${listeners} | PID 文件: ${primary_pid} | 状态: ${state}"
+      ;;
+    *)
+      echo "用法: scripts/dev.sh explain start|stop|status" >&2
+      exit 2
+      ;;
+  esac
+}
+
 usage() {
   cat <<EOF
 用法: scripts/dev.sh start|stop|status|restart|logs
@@ -365,6 +408,10 @@ main() {
       cmd_start "$@"
       ;;
     logs) cmd_logs ;;
+    explain)
+      shift
+      cmd_explain "$@"
+      ;;
     -h|--help|help) usage ;;
     *)
       echo "未知子命令: ${cmd}" >&2

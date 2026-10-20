@@ -1,0 +1,14 @@
+命令: uv run python tests/check_explain.py --live --only A02 (限时 30 分钟)
+开始时间: 2026-10-20 18:01:30 +0800
+git rev: 4206edc
+---
+git rev: 4206edc
+开始时间: 2026-10-20 18:01:30 +0800
+分析器：site/public/py-explain.py
+语料统计： python run=397, 练习=175（浏览器 172+本地 3）, examples/*.py=29, 合计=601
+
+通过：
+  ✓ A02: 20 题 Schema 通过，要点均值 70%
+
+全部通过 ✅
+exit=0
