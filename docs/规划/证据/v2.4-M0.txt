@@ -1,0 +1,37 @@
+命令: git rev-parse --short HEAD && uv run python tests/check_explain.py && uv run python tests/check_course.py
+开始时间: 2026-10-20 14:14:37 +0800
+git rev: 4206edc
+---
+语料统计（M0 实测）：
+  python run 块: 397
+  练习（唯一 id）: 175（浏览器 172 + 本地 3）
+  examples/*.py: 29
+  语料合计: 601
+---
+命令: uv run python tests/check_explain.py
+exit=1
+
+分析器：未安装（site/public/py-explain.py 不存在）
+
+失败 7 项（M0 预期 FAIL：E01、E03、E04、E05、E06 等）：
+  ✗ E01: 分析器 site/public/py-explain.py 不存在
+  ✗ E02: 分析器不存在
+  ✗ E03: 分析器不存在
+  ✗ E04: 概念索引条目 0 < 60
+  ✗ E05: 缺少或无法解析 docs/代码解读/概念索引.md
+  ✗ E06: 分析器不存在
+  ✗ E07: 分析器不存在
+  ✗ E08: 分析器不存在
+  ✗ GOLD: 分析器不存在
+
+跳过：
+  ○ E09: Pyodide P95 性能在 M3 门禁（Node）执行
+  ○ U05: CodeExplainer 未接入（M4 再查 Pages 产物）
+  ○ A01–A04: 需 --live（M5 门禁）
+
+M0 目标 FAIL 条目：E01、E03、E04、E05、E06（共 5 项核心门槛）— 均已 FAIL ✓
+---
+命令: uv run python tests/check_course.py
+exit=0
+
+全部通过 ✅
