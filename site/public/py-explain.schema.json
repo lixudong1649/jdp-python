@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "py-explain result",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["ok", "overview", "syntax_points", "structure", "concepts", "run_info", "pitfalls"],
+      "properties": {
+        "ok": { "const": true },
+        "overview": {
+          "type": "object",
+          "required": ["line_count", "imports", "functions", "classes", "has_main_guard"],
+          "properties": {
+            "line_count": { "type": "integer", "minimum": 0 },
+            "docstring": { "type": ["string", "null"] },
+            "imports": { "type": "array" },
+            "functions": { "type": "array" },
+            "classes": { "type": "array" },
+            "top_level_summary": { "type": "string" },
+            "has_main_guard": { "type": "boolean" }
+          },
+          "additionalProperties": true
+        },
+        "syntax_points": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["lines", "syntax", "meaning", "concept_id"],
+            "properties": {
+              "lines": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+              "syntax": { "type": "string", "minLength": 1 },
+              "meaning": { "type": "string", "minLength": 1 },
+              "concept_id": { "type": "string", "minLength": 1 },
+              "course_links": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": true
+          }
+        },
+        "structure": { "type": "array" },
+        "concepts": { "type": "array" },
+        "run_info": { "type": "object" },
+        "pitfalls": { "type": "array" }
+      },
+      "additionalProperties": true
+    },
+    {
+      "type": "object",
+      "required": ["ok", "error"],
+      "properties": {
+        "ok": { "const": false },
+        "error": {
+          "type": "object",
+          "required": ["line", "column", "message"],
+          "properties": {
+            "line": { "type": "integer", "minimum": 1 },
+            "column": { "type": "integer", "minimum": 0 },
+            "message": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  ]
+}

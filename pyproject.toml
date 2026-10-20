@@ -30,6 +30,7 @@ python_files = ["test_*.py"]
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+extend-exclude = ["tests/fixtures/explain/020-syntax-error"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
@@ -37,4 +38,7 @@ select = ["E", "F", "I", "UP"]
 [tool.ruff.lint.per-file-ignores]
 "scripts/*" = ["E501", "E402", "E741"]
 "tests/check_course.py" = ["E501"]
+"tests/check_explain.py" = ["E501"]
+"site/public/py-explain.py" = ["E501"]
+"tests/fixtures/explain/**" = ["E731", "E722", "F632", "F821", "E711", "F601", "I001"]
 "examples/项目/13-计时重试装饰器/timing.py" = ["UP047"]
