@@ -41,6 +41,8 @@ export default defineConfig({
   outDir,
   cacheDir: path.join(siteRoot, '.vitepress/cache'),
   lastUpdated: false,
+  // 默认浅色，深色仅手动切换并记住，不跟随系统
+  appearance: { initialValue: 'light' },
   head: [
     ['meta', { name: 'theme-color', content: '#3776ab' }],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}logo.svg` }],
